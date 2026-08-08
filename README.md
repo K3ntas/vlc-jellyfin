@@ -40,6 +40,17 @@ intended, on hardware that would otherwise choke or force a transcode.
 See [CUSTOM_CHANGES.md](CUSTOM_CHANGES.md) for the detail on each feature and
 [BUILD_GUIDE.md](BUILD_GUIDE.md) for how to build and deploy.
 
+## Download
+
+Prebuilt APKs are on the [releases page](https://github.com/K3ntas/vlc-jellyfin/releases).
+
+Take **`armeabi-v7a`** unless you know otherwise — plenty of Android TV boxes are 32-bit even with
+recent hardware, and that build also runs on most 64-bit devices. Check yours with
+`adb shell getprop ro.product.cpu.abilist`: if it lists `arm64-v8a` you can take the arm64 build
+instead. The universal APK works everywhere but is three times the size.
+
+Install with `adb install -r <file>.apk`, or copy it across and use a file manager.
+
 ## Building
 
 Requires JDK 21 and the Android SDK (compileSdk 36).
