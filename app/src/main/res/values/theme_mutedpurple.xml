@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="theme_muted_purple_accent">#627EC8</color>
+    <color name="light_grey_transparent">#2EAAAAAA</color>
+
+    <style name="Theme.Jellyfin.MutedPurple" parent="Theme.Jellyfin">
+        <!-- Colors -->
+        <item name="android:colorAccent">@color/theme_muted_purple_accent</item>
+        <item name="defaultSearchColor">@color/theme_muted_purple_accent</item>
+        <item name="progressPrimary">@color/theme_muted_purple_accent</item>
+        <item name="android:colorButtonNormal">@color/light_grey_transparent</item>
+        <item name="buttonDefaultNormalBackground">@color/light_grey_transparent</item>
+        <item name="buttonDefaultHighlightBackground">@color/theme_muted_purple_accent</item>
+        <item name="popupMenuBackground">#384873</item>
+
+        <!-- Control icons -->
+        <item name="controlIconForegroundActive">@color/theme_muted_purple_accent</item>
+
+        <!-- QR drawables -->
+        <item name="qrForeground">@color/theme_muted_purple_accent</item>
+
+        <!-- Rounding Values -->
+        <item name="cardRounding">5dp</item>
+        <item name="buttonRounding">7dp</item>
+        <item name="inputRounding">7dp</item>
+        <item name="popupMenuRounding">7dp</item>
+
+        <!-- Tile colors -->
+        <item name="tile_port_person_bg">#212121</item>
+    </style>
+</resources>

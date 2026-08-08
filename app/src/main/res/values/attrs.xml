@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="JellyfinTheme">
+        <!-- Header Text Color -->
+        <attr name="headerTextColor" format="reference|color" />
+        <!-- Progress Bar Attributes -->
+        <attr name="progressBackground" format="reference|color" />
+        <attr name="progressPrimary" format="reference|color" />
+        <attr name="progressSecondary" format="reference|color" />
+        <!-- CardView Attributes -->
+        <attr name="cardImageBackground" format="reference|color" />
+        <attr name="cardViewBackground" format="reference|color" />
+        <!-- Theme Attributes -->
+        <attr name="cardRounding" format="dimension" />
+        <attr name="buttonRounding" format="dimension" />
+        <attr name="inputRounding" format="dimension" />
+        <attr name="popupMenuRounding" format="dimension" />
+        <attr name="buttonDefaultNormalBackground" format="reference|color" />
+        <attr name="buttonDefaultHighlightBackground" format="reference|color" />
+        <attr name="inputDefaultHighlightBackground" format="reference|color" />
+        <attr name="inputDefaultStrokeWidth" format="dimension" />
+        <attr name="inputDefaultStrokeColor" format="reference|color" />
+        <attr name="popupMenuBackground" format="reference|color" />
+        <attr name="controlIconBackground" format="reference|color" />
+        <attr name="controlIconForegroundActive" format="reference|color" />
+        <attr name="controlIconForegroundInactive" format="reference|color" />
+        <attr name="defaultBackground" format="reference|color" />
+        <!-- QR drawables -->
+        <attr name="qrBackground" format="color" />
+        <attr name="qrForeground" format="color" />
+    </declare-styleable>
+    <declare-styleable name="StrokeTextView">
+        <attr name="strokeWidth" format="float" />
+    </declare-styleable>
+    <declare-styleable name="AsyncImageView">
+        <attr name="crossfadeDuration" format="integer" />
+        <attr name="circleCrop" format="boolean" />
+    </declare-styleable>
+</resources>

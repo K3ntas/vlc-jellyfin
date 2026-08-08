@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="16dp"
+    android:background="@drawable/edit_text_background"
+    android:layout_marginBottom="12dp"
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    android:clickable="true">
+
+    <!-- User Info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Username -->
+        <TextView
+            android:id="@+id/tvUsername"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="JohnDoe" />
+
+        <!-- Rating and Date -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="★"
+                android:textColor="#FFD700"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="#FFD700"
+                android:textSize="14sp"
+                tools:text="9/10" />
+
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                tools:text="Apr 5, 2026" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Review indicator -->
+    <TextView
+        android:id="@+id/tvReviewIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="💬"
+        android:textSize="18sp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Like/Dislike counts -->
+    <LinearLayout
+        android:id="@+id/likeContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="👍"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvLikeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="12dp"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            tools:text="12" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="👎"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvDislikeCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textColor="#F44336"
+            android:textSize="14sp"
+            tools:text="2" />
+
+    </LinearLayout>
+
+    <!-- Edit indicator for own rating -->
+    <TextView
+        android:id="@+id/tvEditIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="✏️"
+        android:textSize="16sp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</LinearLayout>

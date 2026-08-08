@@ -1,0 +1,430 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_begin="180dp"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_left_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="150dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_main_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="170dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_main_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_end="240dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_right_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_end="220dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guide_right_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_end="50dp" />
+
+        <!-- Top -->
+        <TextView
+            android:id="@+id/fdTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-light"
+            android:maxLines="2"
+            android:textSize="30sp"
+            app:layout_constraintBottom_toTopOf="@id/fdMainInfoRow"
+            app:layout_constraintEnd_toEndOf="@id/guide_right_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            tools:text="fdTitle" />
+
+        <LinearLayout
+            android:id="@+id/fdMainInfoRow"
+            android:layout_width="0dp"
+            android:layout_height="20sp"
+            android:dividerPadding="4sp"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toTopOf="@id/fdGenreRow"
+            app:layout_constraintEnd_toEndOf="@id/guide_right_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start" />
+
+        <TextView
+            android:id="@+id/fdGenreRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/guide_top"
+            app:layout_constraintEnd_toEndOf="@id/guide_right_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            tools:text="fdGenreRow" />
+
+        <!-- Left -->
+
+        <TextView
+            android:id="@+id/infoTitle1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAlignment="viewEnd"
+            android:textAllCaps="true"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/guide_top"
+            tools:text="infoTitle1" />
+
+        <TextView
+            android:id="@+id/infoValue1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".6"
+            android:textAlignment="viewEnd"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoTitle1"
+            tools:text="infoValue1" />
+
+        <TextView
+            android:id="@+id/infoTitle2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textAlignment="viewEnd"
+            android:textAllCaps="true"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoValue1"
+            tools:text="infoTitle2" />
+
+        <TextView
+            android:id="@+id/infoValue2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".6"
+            android:textAlignment="viewEnd"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoTitle2"
+            tools:text="infoValue2" />
+
+        <TextView
+            android:id="@+id/infoTitle3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textAlignment="viewEnd"
+            android:textAllCaps="true"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoValue2"
+            tools:text="infoTitle3" />
+
+        <TextView
+            android:id="@+id/infoValue3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".6"
+            android:textAlignment="viewEnd"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@id/guide_left_end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoTitle3"
+            tools:text="infoValue3" />
+
+        <!-- Main -->
+
+        <org.jellyfin.androidtv.ui.ExpandableTextView
+            android:id="@+id/fdSummaryText"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-light"
+            android:maxLines="4"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toTopOf="@id/infoTitle2"
+            app:layout_constraintEnd_toEndOf="@id/guide_main_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            app:layout_constraintTop_toBottomOf="@id/fdGenreRow"
+            tools:text="fdSummaryText" />
+
+        <!-- User Reviews Title -->
+        <TextView
+            android:id="@+id/reviewsTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="@id/guide_main_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            app:layout_constraintTop_toTopOf="@id/infoTitle2"
+            tools:text="User Reviews (1)"
+            tools:visibility="visible" />
+
+        <!-- User Reviews Section - below the title -->
+        <HorizontalScrollView
+            android:id="@+id/reviewsScrollView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:scrollbars="none"
+            android:visibility="gone"
+            android:focusable="false"
+            app:layout_constraintEnd_toEndOf="@id/guide_main_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            app:layout_constraintTop_toBottomOf="@id/reviewsTitle"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:id="@+id/reviewsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingEnd="16dp" />
+        </HorizontalScrollView>
+
+        <!-- Community Rating - Interactive Stars (in main content area) -->
+        <!-- Styled like plugin: stars on top, rating text below, user rating below that -->
+        <LinearLayout
+            android:id="@+id/communityRatingContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:gravity="start"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="@id/guide_main_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            app:layout_constraintTop_toBottomOf="@id/reviewsScrollView"
+            tools:visibility="visible">
+
+            <!-- Row 1: Large interactive stars -->
+            <LinearLayout
+                android:id="@+id/communityRatingStarsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/star1"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star2"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star3"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star4"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star5"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star6"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star7"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star8"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star9"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+                <TextView
+                    android:id="@+id/star10"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:gravity="center"
+                    android:text="☆"
+                    android:textColor="#666666"
+                    android:textSize="26sp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:background="@drawable/button_focusable_background" />
+            </LinearLayout>
+
+            <!-- Row 2: Rating value text (e.g., "6.0/10 - 1 rating") - centered under stars, clickable -->
+            <TextView
+                android:id="@+id/communityRatingValue"
+                android:layout_width="320dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:focusable="true"
+                android:clickable="true"
+                android:background="@drawable/button_focusable_background"
+                android:padding="4dp"
+                tools:text="6.0/10 - 1 rating" />
+
+            <!-- Row 3: User's rating (e.g., "Your rating: 6/10 (click to remove)") - centered under stars -->
+            <TextView
+                android:id="@+id/userRatingText"
+                android:layout_width="320dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#4CAF50"
+                android:textSize="13sp"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:text="Your rating: 6/10 (click to remove)"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <!-- Hidden views for compatibility -->
+        <TextView
+            android:id="@+id/communityRatingTitle"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/communityRatingRow"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/fdButtonRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:divider="@drawable/blank10x10"
+            android:orientation="horizontal"
+            android:showDividers="none"
+            app:layout_constraintEnd_toEndOf="@id/guide_main_end"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start"
+            app:layout_constraintTop_toBottomOf="@id/communityRatingContainer" />
+
+        <!-- Right -->
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@id/fdButtonRow"
+            app:layout_constraintEnd_toEndOf="@id/guide_right_end"
+            app:layout_constraintStart_toStartOf="@id/guide_right_start"
+            app:layout_constraintTop_toTopOf="@id/guide_top"
+            app:layout_constraintVertical_bias="0">
+
+            <org.jellyfin.androidtv.ui.AsyncImageView
+                android:id="@+id/mainImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:background="@drawable/shape_card"
+                android:scaleType="centerInside"
+                tools:srcCompat="@drawable/app_banner" />
+        </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

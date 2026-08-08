@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A1A"
+    android:padding="48dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:maxWidth="700dp"
+        android:layout_gravity="center_horizontal">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lbl_review_detail"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:background="#333333" />
+
+        <!-- User Info Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:background="@drawable/edit_text_background">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Username -->
+                <TextView
+                    android:id="@+id/tvUsername"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    tools:text="JohnDoe" />
+
+                <!-- Date -->
+                <TextView
+                    android:id="@+id/tvDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#666666"
+                    android:textSize="14sp"
+                    tools:text="April 5, 2026" />
+
+            </LinearLayout>
+
+            <!-- Rating Display -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="★"
+                    android:textColor="#FFD700"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/tvRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="#FFD700"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    tools:text="9/10" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Review Text Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/lbl_reviews"
+            android:textColor="#00C853"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvReviewText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="16dp"
+            android:background="@drawable/edit_text_background"
+            android:textColor="#CCCCCC"
+            android:textSize="16sp"
+            android:lineSpacingExtra="4dp"
+            tools:text="This is an amazing movie! The story was captivating and the performances were outstanding." />
+
+        <!-- No Review Text -->
+        <TextView
+            android:id="@+id/tvNoReview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="16dp"
+            android:background="@drawable/edit_text_background"
+            android:text="@string/lbl_no_review"
+            android:textColor="#666666"
+            android:textSize="16sp"
+            android:fontStyle="italic"
+            android:visibility="gone" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="24dp"
+            android:background="#333333" />
+
+        <!-- Like/Dislike Section -->
+        <LinearLayout
+            android:id="@+id/likeDislikeContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Like Button -->
+            <LinearLayout
+                android:id="@+id/btnLike"
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"
+                android:background="@drawable/button_focusable_background"
+                android:focusable="true"
+                android:clickable="true">
+
+                <TextView
+                    android:id="@+id/tvLikeIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="👍"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:id="@+id/tvLikeCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    tools:text="12" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="1dp" />
+
+            <!-- Dislike Button -->
+            <LinearLayout
+                android:id="@+id/btnDislike"
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"
+                android:background="@drawable/button_focusable_background"
+                android:focusable="true"
+                android:clickable="true">
+
+                <TextView
+                    android:id="@+id/tvDislikeIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="👎"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:id="@+id/tvDislikeCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    tools:text="2" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Own Review Notice -->
+        <TextView
+            android:id="@+id/tvOwnReviewNotice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center"
+            android:text="@string/msg_cannot_like_own"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</ScrollView>

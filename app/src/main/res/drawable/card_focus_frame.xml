@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Frame drawn around the focused card so the current selection stays obvious while navigating
+    rows with the D-pad. Applied and cleared from LegacyImageCardView's focus listener rather than
+    through a state selector, because the card view holds focus while this drawable sits on the
+    image inside it.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <corners android:radius="?attr/cardRounding" />
+
+    <stroke
+        android:width="@dimen/card_focus_frame_width"
+        android:color="@color/white" />
+
+</shape>

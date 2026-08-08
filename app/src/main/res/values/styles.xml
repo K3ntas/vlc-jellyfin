@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="DatePickerCustom">
+        <item name="android:datePickerMode">spinner</item>
+    </style>
+
+    <style name="Widget.Jellyfin.Row.Header" parent="Widget.Leanback.Row.Header">
+        <item name="android:textColor">?attr/headerTextColor</item>
+    </style>
+
+    <style name="player_progress" parent="android:Widget.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/progress_bar</item>
+        <item name="android:minHeight">5sp</item>
+        <item name="android:maxHeight">5sp</item>
+    </style>
+
+    <style name="overlay_progress" parent="android:Widget.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/progress_bar</item>
+        <item name="android:minHeight">5sp</item>
+        <item name="android:maxHeight">5sp</item>
+    </style>
+
+    <style name="WindowAnimation"></style>
+
+    <style name="WindowAnimation.SlideTop">
+        <item name="android:windowEnterAnimation">@anim/abc_slide_in_top</item>
+        <item name="android:windowExitAnimation">@anim/abc_slide_out_top</item>
+    </style>
+
+    <style name="WindowAnimation.SlideRight">
+        <item name="android:windowEnterAnimation">@anim/slide_right_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_right_out</item>
+    </style>
+
+    <style name="WindowAnimation.Fade">
+        <item name="android:windowEnterAnimation">@anim/fade_in</item>
+        <item name="android:windowExitAnimation">@anim/fade_out</item>
+    </style>
+
+    <style name="Button.Default" parent="android:Widget.Button">
+        <item name="android:background">@drawable/button_default_back</item>
+        <item name="android:foreground">@drawable/button_default_ripple</item>
+        <item name="android:textColor">@drawable/button_default_text</item>
+        <item name="drawableTint">@drawable/button_icon_tint</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="Button.Icon" parent="android:Widget.Button">
+        <item name="android:background">@drawable/button_icon_back</item>
+        <item name="android:foreground">@drawable/button_icon_ripple</item>
+        <item name="android:tint">@drawable/button_icon_tint</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:minHeight">4dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="Button.Icon.Animated" parent="Button.Icon">
+        <item name="android:tint">@drawable/button_icon_tint_animated</item>
+    </style>
+
+    <style name="Input.Default" parent="android:Widget.EditText">
+        <item name="android:background">@drawable/input_default_back</item>
+        <item name="android:foreground">@drawable/input_default_ripple</item>
+        <item name="android:textColor">@drawable/input_default_text</item>
+        <item name="android:textColorHint">@drawable/input_default_text</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+    </style>
+
+    <style name="PopupMenu" parent="android:Widget.Material.PopupMenu">
+        <item name="android:popupBackground">@drawable/popup_menu_back</item>
+        <item name="android:textColor">@color/indigo_dye</item>
+    </style>
+
+    <style name="PopupWindow" parent="android:Widget.Material.PopupWindow">
+        <item name="android:popupBackground">@drawable/popup_menu_back</item>
+        <item name="android:textColor">@color/indigo_dye</item>
+    </style>
+</resources>

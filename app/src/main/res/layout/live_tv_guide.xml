@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.jellyfin.androidtv.ui.ObservableScrollView
+        android:layout_width="160sp"
+        android:layout_height="match_parent"
+        android:id="@+id/channelScroller"
+        android:layout_gravity="top|start|center"
+        android:background="@color/channel_scroller_bg"
+        android:layout_marginTop="210sp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:layout_marginBottom="20sp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:id="@+id/channels" />
+    </org.jellyfin.androidtv.ui.ObservableScrollView>
+
+    <org.jellyfin.androidtv.ui.ObservableScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/programVScroller"
+        android:background="@color/program_scroller_bg"
+        android:layout_alignTop="@+id/channelScroller"
+        android:layout_toEndOf="@+id/channelScroller"
+        android:layout_alignBottom="@+id/channelScroller">
+
+        <org.jellyfin.androidtv.ui.ObservableHorizontalScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/programHScroller" >
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:id="@+id/programRows">
+
+            </LinearLayout>
+        </org.jellyfin.androidtv.ui.ObservableHorizontalScrollView>
+    </org.jellyfin.androidtv.ui.ObservableScrollView>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="30sp"
+        android:id="@+id/timelineHScroller"
+        android:layout_above="@+id/programVScroller"
+        android:layout_toEndOf="@+id/channelScroller"
+        android:focusable="false"
+        android:background="@color/timeline_bg"
+        android:focusableInTouchMode="false">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:id="@+id/timeline"
+            android:gravity="center_vertical" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="30sp"
+        tools:text="Today"
+        android:id="@+id/displayDate"
+        android:layout_above="@+id/programVScroller"
+        android:layout_toStartOf="@+id/timelineHScroller"
+        android:layout_alignParentStart="true"
+        android:background="@color/timeline_bg"
+        android:gravity="center"
+        android:textSize="14sp" />
+
+    <org.jellyfin.androidtv.ui.ClockUserView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/clock"
+        android:layout_alignTop="@+id/title"
+        android:layout_marginEnd="40sp"
+        android:layout_alignParentEnd="true" />
+
+    <org.jellyfin.androidtv.ui.AsyncImageView
+        android:layout_width="150sp"
+        android:layout_height="150sp"
+        android:id="@+id/programImage"
+        android:layout_gravity="start|top"
+        android:layout_margin="20sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/title"
+        android:layout_alignTop="@+id/programImage"
+        android:layout_toEndOf="@+id/programImage"
+        android:textSize="25sp"
+        android:layout_toStartOf="@+id/clock"
+        android:layout_marginEnd="20sp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:fontFamily="sans-serif-light" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="20sp"
+        android:layout_alignParentEnd="false"
+        android:layout_below="@+id/title"
+        android:layout_alignStart="@+id/title"
+        android:layout_alignEnd="@+id/title"
+        android:id="@+id/infoRow" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/summary"
+        android:textSize="16sp"
+        android:layout_marginEnd="20sp"
+        android:layout_below="@+id/infoRow"
+        android:layout_toEndOf="@+id/programImage"
+        android:layout_above="@+id/timelineHScroller"
+        android:layout_toStartOf="@+id/clock"
+        android:layout_marginBottom="10sp"
+        android:layout_marginTop="5sp"
+        android:ellipsize="end"
+        android:maxLines="5"
+        android:fontFamily="sans-serif-light" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/channelsStatus"
+        android:layout_alignStart="@+id/programImage"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="2sp"
+        android:layout_marginStart="2sp"
+        android:textSize="12sp"
+        android:textColor="@color/grey_light"
+        android:fontFamily="sans-serif-light" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/filterStatus"
+        android:layout_alignEnd="@+id/programVScroller"
+        android:gravity="end"
+        android:layout_alignRight="@+id/programVScroller"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="2sp"
+        android:layout_marginEnd="10sp"
+        android:textStyle="bold"
+        android:textSize="12sp"
+        android:textColor="@color/grey_light"
+        android:fontFamily="sans-serif-light" />
+
+    <ImageButton
+        android:id="@+id/optionsButton"
+        style="@style/Button.Icon"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginEnd="40sp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@+id/timelineHScroller"
+        android:layout_marginBottom="10sp"
+        android:src="@drawable/ic_settings"
+        android:padding="3dp"
+        android:background="@drawable/jellyfin_button"
+        android:scaleType="fitCenter" />
+
+    <ImageButton
+        android:id="@+id/filterButton"
+        style="@style/Button.Icon"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginEnd="10sp"
+        android:layout_toStartOf="@id/optionsButton"
+        android:layout_above="@+id/timelineHScroller"
+        android:layout_marginBottom="10sp"
+        android:src="@drawable/ic_filter"
+        android:padding="3dp"
+        android:background="@drawable/jellyfin_button"
+        android:scaleType="fitCenter" />
+
+    <ImageButton
+        android:id="@+id/dateButton"
+        style="@style/Button.Icon"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginEnd="10sp"
+        android:layout_alignParentEnd="false"
+        android:layout_above="@+id/timelineHScroller"
+        android:layout_marginBottom="10sp"
+        android:src="@drawable/ic_calendar"
+        android:scaleType="fitCenter"
+        android:padding="6dp"
+        android:background="@drawable/jellyfin_button"
+        android:layout_toStartOf="@+id/filterButton" />
+
+    <ImageButton
+        android:id="@+id/resetButton"
+        style="@style/Button.Icon"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_marginEnd="10sp"
+        android:layout_alignParentEnd="false"
+        android:layout_above="@+id/timelineHScroller"
+        android:layout_marginBottom="10sp"
+        android:src="@drawable/ic_time"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        android:padding="6dp"
+        android:background="@drawable/jellyfin_button"
+        android:layout_toStartOf="@+id/dateButton" />
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/spinner"
+        android:background="@color/black_transparent"
+        android:focusable="true"
+        android:clickable="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/lbl_loading_elipses"
+            android:id="@+id/textView9"
+            android:layout_gravity="center"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="200sp" />
+
+        <ProgressBar
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_below="@+id/textView9"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10sp" />
+
+    </RelativeLayout>
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/settingsFilters"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/settingsOptions"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</RelativeLayout>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="false">
+
+        <FrameLayout
+            android:id="@+id/player_surface_frame"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:foregroundGravity="clip_horizontal|clip_vertical"
+            tools:ignore="true">
+
+            <SurfaceView
+                android:id="@+id/subtitles_surface"
+                android:layout_width="1dp"
+                android:layout_height="1dp" />
+
+        </FrameLayout>
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/exoPlayerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:use_controller="false" />
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/leanback_fragment"
+            android:name="org.jellyfin.androidtv.ui.playback.overlay.LeanbackOverlayFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/popupArea"
+        android:layout_width="fill_parent"
+        android:layout_height="225dp"
+        android:layout_gravity="bottom"
+        android:background="@color/black_transparent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/rows_area"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_gravity="start|bottom"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal" />
+    </FrameLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topPanel"
+        android:layout_width="fill_parent"
+        android:layout_height="155dp"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginHorizontal="40dp"
+        android:layout_marginTop="20dp"
+        android:clickable="false"
+        android:visibility="gone">
+
+        <org.jellyfin.androidtv.ui.AsyncImageView
+            android:id="@+id/item_logo"
+            android:layout_width="wrap_content"
+            android:layout_height="60dp"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:layout_marginBottom="2dp"
+            android:contentDescription="@null"
+            android:foregroundGravity="fill_horizontal"
+            android:scaleType="fitCenter"
+            app:layout_constraintEnd_toStartOf="@id/textClock"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_max="450dp" />
+
+        <TextView
+            android:id="@+id/item_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textColor="@color/white"
+            android:textSize="32sp"
+            app:layout_constraintEnd_toStartOf="@id/textClock"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/item_logo"
+            tools:text="Title" />
+
+        <TextView
+            android:id="@+id/item_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            app:layout_constraintEnd_toStartOf="@id/textClock"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/item_title"
+            tools:text="Subtitle" />
+
+        <org.jellyfin.androidtv.ui.ClockUserView
+            android:id="@+id/textClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <org.jellyfin.androidtv.ui.playback.overlay.SkipOverlayView
+        android:id="@+id/skip_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>

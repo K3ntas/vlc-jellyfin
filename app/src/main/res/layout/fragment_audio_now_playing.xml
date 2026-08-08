@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.jellyfin.androidtv.ui.ClockUserView
+        android:id="@+id/clock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="false"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="20sp"
+        android:layout_marginEnd="40sp" />
+
+    <TextView
+        android:id="@+id/artistTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="40sp"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="180sp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-light"
+        android:maxLines="1"
+        android:text="@string/lbl_artists"
+        android:textSize="40sp" />
+
+    <TextView
+        android:id="@+id/genreRow"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/artistTitle"
+        android:layout_alignStart="@+id/artistTitle"
+        android:layout_marginStart="4dp"
+        android:minHeight="22sp" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/mainScroller"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/genreRow"
+        android:layout_marginTop="10dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:id="@+id/detailArea"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_toStartOf="@id/preview">
+
+                <LinearLayout
+                    android:id="@+id/information"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="40dp"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/song"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="marquee"
+                        android:fontFamily="sans-serif-light"
+                        android:layerType="hardware"
+                        android:singleLine="true"
+                        android:text="@string/lbl_song_title"
+                        android:textSize="24sp" />
+
+                    <TextView
+                        android:id="@+id/album"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:ellipsize="marquee"
+                        android:fontFamily="sans-serif-light"
+                        android:layerType="hardware"
+                        android:singleLine="true"
+                        android:text="@string/lbl_album_name"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/track"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="sans-serif-light"
+                        android:textSize="18sp"
+                        tools:text="1" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@id/progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/information"
+                    android:layout_alignStart="@id/buttonRow"
+                    android:layout_alignEnd="@id/buttonRow"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/currentPos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textSize="16sp"
+                        tools:text="0:00" />
+
+                    <androidx.compose.ui.platform.ComposeView
+                        android:id="@+id/playerProgress"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/remainingTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:textSize="16sp"
+                        tools:text="-5:00" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/buttonRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/progress"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="10dp"
+                    android:divider="@drawable/blank20x20"
+                    android:gravity="center_vertical"
+                    android:minHeight="35sp"
+                    android:orientation="horizontal"
+                    android:showDividers="middle">
+
+                    <ImageButton
+                        android:id="@+id/prevBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_previous" />
+
+                    <ImageButton
+                        android:id="@+id/rewindBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_rewind" />
+
+                    <ImageButton
+                        android:id="@+id/playPauseBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_pause" />
+
+                    <ImageButton
+                        android:id="@+id/fastForwardBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_fast_forward" />
+
+                    <ImageButton
+                        android:id="@+id/nextBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_next" />
+
+                    <ImageButton
+                        android:id="@+id/repeatBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_loop" />
+
+                    <ImageButton
+                        android:id="@+id/shuffleBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_shuffle" />
+
+                    <ImageButton
+                        android:id="@+id/albumBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_album" />
+
+                    <ImageButton
+                        android:id="@+id/artistBtn"
+                        style="@style/Button.Icon"
+                        android:layout_width="28sp"
+                        android:layout_height="28sp"
+                        android:src="@drawable/ic_user" />
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/preview"
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="60dp" />
+
+            <FrameLayout
+                android:id="@+id/rowsFragment"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_below="@+id/detailArea"
+                android:layout_alignParentBottom="false"
+                android:layout_marginTop="30dp" />
+
+            <TextView
+                android:id="@+id/counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="40dp"
+                android:layout_marginBottom="25sp"
+                android:fontFamily="sans-serif-light"
+                android:textAlignment="viewEnd"
+                android:textSize="18sp"
+                tools:text="0 | 0" />
+
+        </RelativeLayout>
+
+    </androidx.core.widget.NestedScrollView>
+</RelativeLayout>

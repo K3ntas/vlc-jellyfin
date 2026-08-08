@@ -1,0 +1,19 @@
+*.iml
+.DS_Store
+local.properties
+
+/.idea
+.gradle
+.kotlin/
+build/
+captures/
+
+# Claude Code
+.claude/
+
+# Claude Code local machine settings (paths, permissions) - not shared
+.claude/settings.local.json
+
+# Personal, machine-specific files: deploy scripts with real device addresses,
+# working notes. Keep anything with a LAN address or a home directory path in here.
+/local/
