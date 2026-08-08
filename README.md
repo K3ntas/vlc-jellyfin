@@ -48,8 +48,15 @@ Requires JDK 21 and the Android SDK (compileSdk 36).
 ./gradlew assembleRelease
 ```
 
-Release builds are signed with the local debug keystore so they sideload without setup. Build
-release rather than debug — debug builds run significantly slower on TV hardware.
+Build release rather than debug — debug builds run significantly slower on TV hardware.
+
+Release builds are signed with the standard Android debug keystore (`~/.android/debug.keystore`)
+so they sideload without any setup. If you have never run Android Studio you will not have that
+file, and the APK is left unsigned instead; sign it yourself, or create the keystore with
+`keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey
+-keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"`.
+
+Then install it with `adb install -r app/build/outputs/apk/release/*.apk`.
 
 ## Licence and attribution
 

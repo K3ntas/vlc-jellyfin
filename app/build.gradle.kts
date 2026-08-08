@@ -30,14 +30,20 @@ android {
 		isCoreLibraryDesugaringEnabled = true
 	}
 
+	// Signs release builds with the standard Android debug key so personal sideloaded builds
+	// install without any extra setup. A machine that has never run Android Studio has no such
+	// keystore, so this is optional: without it the release APK is simply left unsigned rather
+	// than failing the build. Swap in a dedicated keystore before distributing the app.
+	val debugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+
 	signingConfigs {
-		// Signs release builds with the local debug key so sideloaded personal builds install
-		// without any extra setup. Swap in a dedicated keystore before distributing the app.
-		create("sideload") {
-			storeFile = File(System.getProperty("user.home"), ".android/debug.keystore")
-			storePassword = "android"
-			keyAlias = "androiddebugkey"
-			keyPassword = "android"
+		if (debugKeystore.exists()) {
+			create("sideload") {
+				storeFile = debugKeystore
+				storePassword = "android"
+				keyAlias = "androiddebugkey"
+				keyPassword = "android"
+			}
 		}
 	}
 
@@ -48,7 +54,7 @@ android {
 			// needs its own testing pass. The speed win here comes from debuggable = false.
 			proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
 
-			signingConfig = signingConfigs.getByName("sideload")
+			signingConfig = signingConfigs.findByName("sideload")
 
 			// Set package names used in various XML files
 			resValue("string", "app_id", namespace!!)
