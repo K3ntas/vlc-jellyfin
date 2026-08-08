@@ -30,6 +30,19 @@ android {
 		isCoreLibraryDesugaringEnabled = true
 	}
 
+	// The bundled VLC and ffmpeg native libraries come to roughly 180 MB across all four ABIs, and
+	// x86/x86_64 account for about 100 MB of that while no Android TV box can use them. Splitting
+	// per ABI gives a download around a third the size. The universal APK is still produced for
+	// the x86 emulator and for anyone unsure which their device needs.
+	splits {
+		abi {
+			isEnable = true
+			reset()
+			include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+			isUniversalApk = true
+		}
+	}
+
 	// Signs release builds with the standard Android debug key so personal sideloaded builds
 	// install without any extra setup. A machine that has never run Android Studio has no such
 	// keystore, so this is optional: without it the release APK is simply left unsigned rather
