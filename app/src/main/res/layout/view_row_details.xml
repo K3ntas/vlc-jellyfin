@@ -244,6 +244,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -255,6 +256,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -266,6 +268,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -277,6 +280,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -288,6 +292,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -299,6 +304,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -310,6 +316,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -321,6 +328,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -332,6 +340,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />
@@ -343,6 +352,7 @@
                     android:text="☆"
                     android:textColor="#666666"
                     android:textSize="26sp"
+                    android:includeFontPadding="false"
                     android:focusable="true"
                     android:clickable="true"
                     android:background="@drawable/button_focusable_background" />

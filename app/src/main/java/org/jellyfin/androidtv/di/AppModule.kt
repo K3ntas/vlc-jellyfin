@@ -4,6 +4,9 @@ import android.content.Context
 import android.os.Build
 import androidx.lifecycle.ProcessLifecycleOwner
 import coil3.ImageLoader
+import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
+import okio.Path.Companion.toOkioPath
 import coil3.annotation.ExperimentalCoilApi
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
@@ -19,6 +22,8 @@ import org.jellyfin.androidtv.auth.repository.UserRepositoryImpl
 import org.jellyfin.androidtv.data.eventhandling.SocketHandler
 import org.jellyfin.androidtv.data.model.DataRefreshService
 import org.jellyfin.androidtv.data.ratings.RatingsRepository
+import org.jellyfin.androidtv.data.social.SocialRepository
+import org.jellyfin.androidtv.ui.social.ProfileViewModel
 import org.jellyfin.androidtv.data.repository.CustomMessageRepository
 import org.jellyfin.androidtv.data.repository.CustomMessageRepositoryImpl
 import org.jellyfin.androidtv.data.repository.ExternalAppRepository
@@ -71,6 +76,10 @@ import org.jellyfin.sdk.Jellyfin as JellyfinSdk
 
 val defaultDeviceInfo = named("defaultDeviceInfo")
 
+/** Roughly a quarter of a modest TV box's heap, and a disk budget a poster library fits inside. */
+private const val MEMORY_CACHE_BYTES = 48L * 1024 * 1024
+private const val DISK_CACHE_BYTES = 512L * 1024 * 1024
+
 val appModule = module {
 	// SDK
 	single(defaultDeviceInfo) { androidDevice(get()) }
@@ -119,6 +128,22 @@ val appModule = module {
 	single {
 		ImageLoader.Builder(androidContext()).apply {
 			serviceLoaderEnabled(false)
+
+			// Configured explicitly rather than left to defaults: without a disk cache every
+			// poster is re-downloaded on each browse, which on a low-power box talking to a NAS
+			// is the difference between instant rows and visible loading.
+			memoryCache {
+				MemoryCache.Builder()
+					.maxSizeBytes(MEMORY_CACHE_BYTES)
+					.build()
+			}
+
+			diskCache {
+				DiskCache.Builder()
+					.directory(androidContext().cacheDir.resolve("image_cache").toOkioPath())
+					.maxSizeBytes(DISK_CACHE_BYTES)
+					.build()
+			}
 			logger(CoilTimberLogger(if (BuildConfig.DEBUG) Logger.Level.Warn else Logger.Level.Error))
 
 			components {
@@ -151,6 +176,12 @@ val appModule = module {
 		RatingsRepository(get(), okHttpFactory.createClient(httpClientOptions))
 	}
 
+	single {
+		val okHttpFactory = get<OkHttpFactory>()
+		val httpClientOptions = get<HttpClientOptions>()
+		SocialRepository(get(), okHttpFactory.createClient(httpClientOptions))
+	}
+
 	viewModel { StartupViewModel(get(), get(), get(), get()) }
 	viewModel { UserLoginViewModel(get(), get(), get(), get(defaultDeviceInfo)) }
 	viewModel { ServerAddViewModel(get()) }
@@ -162,6 +193,7 @@ val appModule = module {
 	viewModel { LatestMediaViewModel(get()) }
 	viewModel { DreamViewModel(get(), get(), get(), get(), get()) }
 	viewModel { SettingsViewModel() }
+	viewModel { ProfileViewModel(get()) }
 
 	single { BackgroundService(get(), get(), get(), get(), get()) }
 

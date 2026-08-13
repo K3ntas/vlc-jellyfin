@@ -32,6 +32,7 @@ import org.jellyfin.androidtv.data.repository.CustomMessageRepository
 import org.jellyfin.androidtv.data.repository.NotificationsRepository
 import org.jellyfin.androidtv.data.repository.UserViewsRepository
 import org.jellyfin.androidtv.data.service.BackgroundService
+import org.jellyfin.androidtv.preference.PreferencesRepository
 import org.jellyfin.androidtv.preference.UserSettingPreferences
 import org.jellyfin.androidtv.ui.browsing.CompositeClickedListener
 import org.jellyfin.androidtv.ui.browsing.CompositeSelectedListener
@@ -65,6 +66,7 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 	private val userRepository by inject<UserRepository>()
 	private val userSettingPreferences by inject<UserSettingPreferences>()
 	private val userViewsRepository by inject<UserViewsRepository>()
+	private val preferencesRepository by inject<PreferencesRepository>()
 	private val dataRefreshService by inject<DataRefreshService>()
 	private val customMessageRepository by inject<CustomMessageRepository>()
 	private val navigationRepository by inject<NavigationRepository>()
@@ -108,6 +110,17 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 					limit = 1,
 				)
 				includeLiveTvRows = recommendedPrograms.items.isNotEmpty()
+			}
+
+			// Warm each library's display preferences now, off the main thread. Opening a library
+			// grid reads them synchronously, which blocks the UI thread on a server round trip if
+			// they have not been fetched yet.
+			launch {
+				userViewsRepository.views.first().forEach { view ->
+					view.displayPreferencesId?.let { id ->
+						runCatching { preferencesRepository.prepareLibraryPreferences(id) }
+					}
+				}
 			}
 
 			// Make sure the rows are empty

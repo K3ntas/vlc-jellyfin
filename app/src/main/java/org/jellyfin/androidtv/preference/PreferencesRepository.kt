@@ -14,6 +14,20 @@ class PreferencesRepository(
 ) {
 	private val libraryPreferences = mutableMapOf<String, LibraryPreferences>()
 
+	/**
+	 * Warms the store for a library ahead of time.
+	 *
+	 * [getLibraryPreferences] has to stay synchronous while its callers are Java and Compose
+	 * composition, and it blocks on a network round trip whenever the store is cold - on the main
+	 * thread, because that is where those callers run. Fetching ahead of time means the blocking
+	 * path finds the data already present and returns immediately.
+	 */
+	suspend fun prepareLibraryPreferences(preferencesId: String) {
+		val store = libraryPreferences.getOrPut(preferencesId) { LibraryPreferences(preferencesId, api) }
+
+		if (store.shouldUpdate) store.update()
+	}
+
 	fun getLibraryPreferences(preferencesId: String): LibraryPreferences {
 		val store = libraryPreferences[preferencesId] ?: LibraryPreferences(preferencesId, api)
 

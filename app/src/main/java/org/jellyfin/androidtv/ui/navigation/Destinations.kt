@@ -24,6 +24,7 @@ import org.jellyfin.androidtv.ui.playback.stillwatching.StillWatchingFragment
 import org.jellyfin.androidtv.ui.player.photo.PhotoPlayerFragment
 import org.jellyfin.androidtv.ui.player.video.VideoPlayerFragment
 import org.jellyfin.androidtv.ui.search.SearchFragment
+import org.jellyfin.androidtv.ui.social.ProfileFragment
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SeriesTimerInfoDto
@@ -36,6 +37,11 @@ object Destinations {
 	val home = fragmentDestination<HomeFragment>()
 	fun search(query: String? = null) = fragmentDestination<SearchFragment>(
 		SearchFragment.EXTRA_QUERY to query,
+	)
+
+	// Social profile from the ratings plugin. Omit userId for the signed-in user's own profile.
+	fun profile(userId: UUID? = null) = fragmentDestination<ProfileFragment>(
+		ProfileFragment.EXTRA_USER_ID to userId?.toString(),
 	)
 
 	// Browsing

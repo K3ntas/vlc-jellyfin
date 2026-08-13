@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +40,7 @@ import org.jellyfin.androidtv.ui.base.button.IconButton
 import org.jellyfin.androidtv.ui.base.button.IconButtonDefaults
 import org.jellyfin.androidtv.ui.navigation.ActivityDestinations
 import org.jellyfin.androidtv.ui.navigation.Destinations
+import org.jellyfin.androidtv.data.social.SocialRepository
 import org.jellyfin.androidtv.ui.navigation.NavigationRepository
 import org.jellyfin.androidtv.ui.playback.MediaManager
 import org.jellyfin.androidtv.ui.settings.compat.SettingsViewModel
@@ -88,6 +92,12 @@ private fun MainToolbar(
 		containerColor = JellyfinTheme.colorScheme.buttonActive,
 		contentColor = JellyfinTheme.colorScheme.onButtonActive,
 	)
+
+	// The profile button only makes sense when the server has the ratings plugin, which owns the
+	// social API. Probed once per composition of the toolbar.
+	val socialRepository = koinInject<SocialRepository>()
+	var socialAvailable by remember { mutableStateOf(false) }
+	LaunchedEffect(Unit) { socialAvailable = socialRepository.isAvailable() }
 
 	// Toolbar search state
 	val toolbarSearchViewModel = koinViewModel<ToolbarSearchViewModel>()
@@ -197,6 +207,18 @@ private fun MainToolbar(
 							imageVector = ImageVector.vectorResource(R.drawable.ic_time),
 							contentDescription = "Latest Media",
 						)
+					}
+
+					// Social profile, only when the ratings plugin is present to serve it
+					if (socialAvailable) {
+						IconButton(
+							onClick = { navigationRepository.navigate(Destinations.profile()) },
+						) {
+							Icon(
+								imageVector = ImageVector.vectorResource(R.drawable.ic_user),
+								contentDescription = stringResource(R.string.lbl_profile),
+							)
+						}
 					}
 
 					// Quick search button - opens full overlay
