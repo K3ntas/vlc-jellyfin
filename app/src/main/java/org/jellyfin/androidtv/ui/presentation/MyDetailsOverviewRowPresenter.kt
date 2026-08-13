@@ -14,6 +14,7 @@ import org.jellyfin.androidtv.data.ratings.UserRatingDetail
 import org.jellyfin.androidtv.ui.DetailRowView
 import org.jellyfin.androidtv.ui.itemdetail.MyDetailsOverviewRow
 import org.jellyfin.androidtv.util.InfoLayoutHelper
+import org.jellyfin.androidtv.util.centerGlyphVertically
 import org.jellyfin.androidtv.util.MarkdownRenderer
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -94,6 +95,11 @@ class MyDetailsOverviewRowPresenter(
 			Timber.d("Setting up star buttons")
 			starButtons.forEachIndexed { index, button ->
 				val rating = index + 1
+
+				// The star glyph paints low in its line box, so centring the text alone leaves the
+				// focus background looking top-heavy. Measured against the filled star, which is
+				// the taller of the two shapes the button switches between.
+				button.centerGlyphVertically("★")
 
 				// Handle click for touch
 				button.setOnClickListener {
