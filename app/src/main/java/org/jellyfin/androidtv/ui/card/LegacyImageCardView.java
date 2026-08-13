@@ -66,8 +66,9 @@ public class LegacyImageCardView extends BaseCardView {
 
     private ValueAnimator mDepthAnimator = null;
     private Runnable mTrailerProgressTick = null;
-    /** Whether a running preview is currently covering up the episode count. */
+    /** Which badges a running preview is currently covering up, so only those are put back. */
     private boolean mWatchedIndicatorHidden = false;
+    private boolean mRatingBadgeHidden = false;
 
     /** Base hue of the focus frame, taken from the artwork once it has been analysed. */
     private float mFrameBaseHue = (float) (Math.random() * 360f);
@@ -95,7 +96,9 @@ public class LegacyImageCardView extends BaseCardView {
      * because the shadow behind the text carries most of the legibility, so the glyphs themselves
      * do not have to be bright.
      */
-    private static final float TRAILER_TITLE_ALPHA = 0.45f;
+    private static final float TRAILER_TITLE_ALPHA = 0.32f;
+
+    private static final long BADGE_FADE_MS = 300L;
 
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
@@ -373,22 +376,29 @@ public class LegacyImageCardView extends BaseCardView {
         binding.trailerProgress.setVisibility(VISIBLE);
         startTrailerProgressTicker();
 
-        // The episode count belongs to the artwork, not to the trailer now playing over it, and it
-        // sits exactly where the picture is busiest. Remembered so it comes back afterwards
-        // rather than being left to whatever binds this card next.
-        if (binding.watchedIndicator.getVisibility() == VISIBLE) {
-            mWatchedIndicatorHidden = true;
-            binding.watchedIndicator.animate()
-                    .alpha(0f)
-                    .setDuration(300)
-                    .withEndAction(() -> binding.watchedIndicator.setVisibility(GONE))
-                    .start();
-        }
+        // Both badges describe the artwork, not the trailer now playing over it, and they sit in
+        // the corners where the picture is usually busiest. Remembered individually so each comes
+        // back only if it was there to begin with.
+        mWatchedIndicatorHidden = hideBadge(binding.watchedIndicator);
+        mRatingBadgeHidden = hideBadge(binding.ratingBadgeOverlay);
+    }
+
+    /** Fades [badge] out if it is showing. Returns whether it had anything to hide. */
+    private boolean hideBadge(View badge) {
+        if (badge.getVisibility() != VISIBLE) return false;
+
+        badge.animate()
+                .alpha(0f)
+                .setDuration(BADGE_FADE_MS)
+                .withEndAction(() -> badge.setVisibility(GONE))
+                .start();
+
+        return true;
     }
 
     private void hideTrailerOverlays() {
         stopTrailerProgressTicker();
-        restoreWatchedIndicator();
+        restoreArtworkBadges();
 
         binding.trailerVignette.animate().cancel();
         binding.trailerVignette.setVisibility(GONE);
@@ -398,16 +408,25 @@ public class LegacyImageCardView extends BaseCardView {
     }
 
     /**
-     * Puts the episode count back after a preview. Also called when the card is rebound, since a
-     * card recycled mid-preview would otherwise carry a transparent badge onto its next item.
+     * Puts the badges back after a preview. Also called when the card is rebound, since a card
+     * recycled mid-preview would otherwise carry a transparent badge onto its next item.
      */
-    private void restoreWatchedIndicator() {
-        if (!mWatchedIndicatorHidden) return;
+    private void restoreArtworkBadges() {
+        if (mWatchedIndicatorHidden) {
+            mWatchedIndicatorHidden = false;
+            restoreBadge(binding.watchedIndicator);
+        }
 
-        mWatchedIndicatorHidden = false;
-        binding.watchedIndicator.animate().cancel();
-        binding.watchedIndicator.setAlpha(1f);
-        binding.watchedIndicator.setVisibility(VISIBLE);
+        if (mRatingBadgeHidden) {
+            mRatingBadgeHidden = false;
+            restoreBadge(binding.ratingBadgeOverlay);
+        }
+    }
+
+    private void restoreBadge(View badge) {
+        badge.animate().cancel();
+        badge.setAlpha(1f);
+        badge.setVisibility(VISIBLE);
     }
 
     private void startTrailerProgressTicker() {
@@ -523,7 +542,7 @@ public class LegacyImageCardView extends BaseCardView {
         // Cards are recycled, so a card being rebound while expanded must forget the old artwork's
         // width or it would later shrink back to a size that belongs to a different item.
         cancelTrailerExpansion();
-        restoreWatchedIndicator();
+        restoreArtworkBadges();
         mCollapsedImageWidth = 0;
 
         ViewGroup.LayoutParams lp = binding.mainImage.getLayoutParams();
