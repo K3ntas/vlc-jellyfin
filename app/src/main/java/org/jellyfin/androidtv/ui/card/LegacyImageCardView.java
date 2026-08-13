@@ -69,6 +69,7 @@ public class LegacyImageCardView extends BaseCardView {
     /** Which badges a running preview is currently covering up, so only those are put back. */
     private boolean mWatchedIndicatorHidden = false;
     private boolean mRatingBadgeHidden = false;
+    private boolean mNameOverlayHidden = false;
 
     /** Base hue of the focus frame, taken from the artwork once it has been analysed. */
     private float mFrameBaseHue = (float) (Math.random() * 360f);
@@ -381,6 +382,11 @@ public class LegacyImageCardView extends BaseCardView {
         // back only if it was there to begin with.
         mWatchedIndicatorHidden = hideBadge(binding.watchedIndicator);
         mRatingBadgeHidden = hideBadge(binding.ratingBadgeOverlay);
+
+        // Library grids label the focused card with its name in full white. The trailer already
+        // carries the name, dimmer and with the year, so leaving both up stacks two copies of the
+        // same title on top of each other.
+        mNameOverlayHidden = hideBadge(binding.nameOverlay);
     }
 
     /** Fades [badge] out if it is showing. Returns whether it had anything to hide. */
@@ -420,6 +426,11 @@ public class LegacyImageCardView extends BaseCardView {
         if (mRatingBadgeHidden) {
             mRatingBadgeHidden = false;
             restoreBadge(binding.ratingBadgeOverlay);
+        }
+
+        if (mNameOverlayHidden) {
+            mNameOverlayHidden = false;
+            restoreBadge(binding.nameOverlay);
         }
     }
 
