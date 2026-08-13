@@ -3,6 +3,31 @@
 Everything here is a change relative to upstream
 [jellyfin-androidtv](https://github.com/jellyfin/jellyfin-androidtv).
 
+## v1.8.0 — Social profiles
+
+A profile page driven by the ratings plugin's social API, laid out for a TV rather than copied
+from the web: header with avatar, online badge and member-since; the same counter strip as the web
+page; and tabbed content covering overview, ratings, reviews, activity, following, followers,
+friends, requests and other members.
+
+The overview keeps the web's two-column shape — favourite rows on the left, a sidebar carrying
+stats, a **ratings histogram** and a **taste donut** (both drawn on Canvas), similar-taste matches
+with presence dots, and a recent-activity list. Cards open the item; members open their profile.
+
+Everything degrades quietly: without the plugin the profile button never appears, and a server
+that answers but fails says so rather than silently rendering an empty page.
+
+**Notes for anyone writing against the same API.** Jellyfin ids arrive without dashes, so
+`UUID.fromString` throws and the SDK's `toUUID()` is required. Image urls are server-relative.
+The `/Social` endpoints authenticate off the raw `X-Emby-Token` header while `/Ratings` accepts the
+standard form. `Profile/{id}/Full` does not carry favourites, so the profile call is still needed.
+
+**Performance.** The image loader now configures explicit memory and disk caches — it previously
+had neither, so every poster was re-fetched. The profile's content list is lazy, colour parsing is
+cached rather than re-run per frame, the focus modifier no longer uses `composed`, profiles are
+cached between visits, and library display preferences are prefetched off the main thread because
+reading them blocks on a network call.
+
 ## v1.5.0 — Performance and card focus
 
 The app was noticeably sluggish on low-power boxes: slow to load media, and slow to move through

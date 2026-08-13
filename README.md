@@ -33,6 +33,9 @@ intended, on hardware that would otherwise choke or force a transcode.
 - **Community ratings** — inline star rating on detail screens, talking to
   [jellyfin-plugin-ratings](https://github.com/K3ntas/jellyfin-plugin-ratings), the companion
   server-side plugin
+- **Social profiles** — a full profile page on the TV: stats, favourite rows, a ratings histogram
+  and taste donut, your reviews and recent activity, friends, followers and other members, with
+  animated D-pad focus throughout. Appears only when the ratings plugin is installed
 - **Tuned for low-power boxes** — browse queries request only what a card draws, genre rows load in
   batches instead of all at once, and backdrops are debounced and downscaled. See
   [CHANGELOG.md](CHANGELOG.md) for the detail
