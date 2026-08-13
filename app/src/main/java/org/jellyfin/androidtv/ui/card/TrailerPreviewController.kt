@@ -35,7 +35,7 @@ class TrailerPreviewController @JvmOverloads constructor(
 ) {
 	companion object {
 		/** Long enough that passing over cards never triggers a request. */
-		val DWELL: Duration = 5.seconds
+		val DWELL: Duration = 2.seconds
 
 		/**
 		 * Items can list dozens of remote trailers, and each extraction is a network round trip.

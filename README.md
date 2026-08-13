@@ -26,9 +26,14 @@ intended, on hardware that would otherwise choke or force a transcode.
 
 ## The rest of it
 
+- **Trailers play in the card** — hold focus on anything for two seconds and its trailer starts
+  playing inside the card, which opens out to widescreen while it runs. Jellyfin stores trailers as
+  YouTube links rather than files, so the app resolves them to a real stream with
+  [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor) — no local trailer files
+  needed, and nothing leaves the app to a browser
 - **Genre rows** — libraries are browsed as horizontal rows per genre rather than a flat grid
-- **Netflix-style cards** — title overlay on focus, rating badges, and an animated focus frame that
-  drifts around the colour wheel so the selected card is always obvious
+- **Netflix-style cards** — clean artwork with no title clutter, rating badges, and an animated
+  focus frame that drifts around the colour wheel so the selected card is always obvious
 - **Custom TV search** — a grid keyboard built for a D-pad instead of the system keyboard overlay
 - **Community ratings** — inline star rating on detail screens, talking to
   [jellyfin-plugin-ratings](https://github.com/K3ntas/jellyfin-plugin-ratings), the companion

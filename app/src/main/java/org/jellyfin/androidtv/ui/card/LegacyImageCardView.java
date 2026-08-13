@@ -319,8 +319,20 @@ public class LegacyImageCardView extends BaseCardView {
             return;
         }
 
+        binding.title.setVisibility(VISIBLE);
         binding.title.setText(text);
         setTextMaxLines();
+    }
+
+    /**
+     * Drops the name printed under the artwork.
+     *
+     * Posters already carry their own title, so the label repeats it in a less legible form and
+     * only adds noise to a wall of cards. Cards are recycled, so this pairs with setTitleText
+     * putting the label back rather than being a one-way switch.
+     */
+    public void hideTitleText() {
+        if (binding.title != null) binding.title.setVisibility(GONE);
     }
 
     public void setOverlayText(String text) {
