@@ -27,6 +27,15 @@ class MyDetailsOverviewRowPresenter(
 		private val detailRowView: DetailRowView,
 		private val markdownRenderer: MarkdownRenderer,
 	) : RowPresenter.ViewHolder(detailRowView) {
+		private companion object {
+			/** Enough to register as a pulse without the star colliding with its neighbours. */
+			const val STAR_BLOOM_SCALE = 1.35f
+			const val STAR_BLOOM_MS = 130L
+
+			/** Short enough that ten stars still finish quickly. */
+			const val STAR_SWEEP_STAGGER_MS = 45L
+		}
+
 		private val binding get() = detailRowView.binding
 
 		// Star button references
@@ -224,6 +233,13 @@ class MyDetailsOverviewRowPresenter(
 
 		fun setCommunityRating(stats: RatingStats?) {
 			Timber.d("setCommunityRating called with stats: $stats")
+
+			// A rating the user just gave is worth acknowledging, so the stars sweep into place
+			// instead of appearing already filled. Only when the value actually changes - rebinding
+			// the same rating should not replay it.
+			val previous = currentStats?.userRating
+			val arrived = stats?.userRating
+
 			currentStats = stats
 			focusedRating = 0
 
@@ -251,6 +267,38 @@ class MyDetailsOverviewRowPresenter(
 				binding.userRatingText.text = "Your rating: ${stats.userRating}/10 (click to remove)"
 			} else {
 				binding.userRatingText.isVisible = false
+			}
+
+			if (arrived != null && arrived != previous) sweepStars(arrived)
+		}
+
+		/**
+		 * Runs a brief bloom left to right across the stars the user just awarded.
+		 *
+		 * Rating is the one interaction on this screen with no motion of its own - the value simply
+		 * appears. A short sweep makes it feel acknowledged without holding anything up, and the
+		 * display underneath is already correct if it is interrupted.
+		 */
+		private fun sweepStars(rating: Int) {
+			starButtons.take(rating).forEachIndexed { index, button ->
+				button.animate().cancel()
+				button.scaleX = 1f
+				button.scaleY = 1f
+
+				button.animate()
+					.scaleX(STAR_BLOOM_SCALE)
+					.scaleY(STAR_BLOOM_SCALE)
+					.setStartDelay(index * STAR_SWEEP_STAGGER_MS)
+					.setDuration(STAR_BLOOM_MS)
+					.withEndAction {
+						button.animate()
+							.scaleX(1f)
+							.scaleY(1f)
+							.setStartDelay(0)
+							.setDuration(STAR_BLOOM_MS)
+							.start()
+					}
+					.start()
 			}
 		}
 

@@ -106,6 +106,20 @@ object TrailerPreviewPlayer {
 		}
 	}
 
+	/**
+	 * How far through the trailer [token]'s preview is, 0 to 1, or 0 when it does not own the
+	 * player or the duration is not yet known.
+	 */
+	fun progressOf(token: Any): Float {
+		if (owner !== token) return 0f
+
+		val instance = player ?: return 0f
+		val duration = instance.duration
+		if (duration <= 0L) return 0f
+
+		return (instance.currentPosition.toFloat() / duration).coerceIn(0f, 1f)
+	}
+
 	/** Matches the video's fade so picture and sound arrive together. */
 	private fun fadeInAudio() {
 		volumeFade?.cancel()

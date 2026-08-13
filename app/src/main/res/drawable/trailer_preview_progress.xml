@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Hairline progress for a trailer playing inside a card. Deliberately thin and unlabelled: it is
+    there to say the preview is going somewhere, not to be read.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF" />
+        </shape>
+    </item>
+
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="#F2FFFFFF" />
+            </shape>
+        </clip>
+    </item>
+
+</layer-list>

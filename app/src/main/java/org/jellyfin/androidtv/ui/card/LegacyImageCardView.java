@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -33,7 +34,11 @@ import org.jellyfin.sdk.api.client.ApiClient;
 import org.jellyfin.sdk.model.api.BaseItemDto;
 import org.koin.java.KoinJavaComponent;
 
+import org.jellyfin.androidtv.util.ArtworkPalette;
+
 import java.text.NumberFormat;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Modified ImageCard with no fade on the badge
@@ -59,6 +64,27 @@ public class LegacyImageCardView extends BaseCardView {
     private static final float TRAILER_ASPECT = 16f / 9f;
     private static final long TRAILER_EXPAND_MS = 300L;
 
+    private ValueAnimator mDepthAnimator = null;
+    private Runnable mTrailerProgressTick = null;
+
+    /** Base hue of the focus frame, taken from the artwork once it has been analysed. */
+    private float mFrameBaseHue = (float) (Math.random() * 360f);
+
+    /** Palette work is short but not free, and never needs to run in parallel with itself. */
+    private static final Executor PALETTE_EXECUTOR = Executors.newSingleThreadExecutor();
+
+    /**
+     * How far either side of the artwork's own hue the frame drifts. Wide enough to stay alive,
+     * narrow enough that the frame still reads as the colour of the poster it surrounds.
+     */
+    private static final float FOCUS_FRAME_SWING = 25f;
+
+    /** A brief tilt as focus lands, so the card reads as being pushed rather than just scaled. */
+    private static final float DEPTH_TILT_DEGREES = 7f;
+    private static final long DEPTH_SETTLE_MS = 420L;
+
+    private static final long TRAILER_PROGRESS_INTERVAL_MS = 500L;
+
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
     /** Held back from fully saturated so the frame stays easy on the eye against artwork. */
@@ -72,6 +98,9 @@ public class LegacyImageCardView extends BaseCardView {
         }
 
         binding.mainImage.setClipToOutline(true);
+
+        // Without a deep camera the settle tilt reads as the card folding rather than leaning
+        setCameraDistance(getResources().getDisplayMetrics().density * 8000f);
 
         // "hack" to trigger KeyProcessor to open the menu for this item on long press
         setOnLongClickListener(v -> {
@@ -93,9 +122,11 @@ public class LegacyImageCardView extends BaseCardView {
 
             if (hasFocus) {
                 startFocusFrameAnimation();
+                startDepthSettle();
                 startTrailerDwell();
             } else {
                 stopFocusFrameAnimation();
+                stopDepthSettle();
                 stopTrailerPreview();
             }
 
@@ -153,17 +184,91 @@ public class LegacyImageCardView extends BaseCardView {
 
         GradientDrawable frame = getFocusFrame();
         int strokeWidth = getResources().getDimensionPixelSize(R.dimen.card_focus_frame_width);
-        float startHue = (float) (Math.random() * 360f);
+
+        resolveAccentHue();
 
         mFocusFrameAnimator = ValueAnimator.ofFloat(0f, 360f);
         mFocusFrameAnimator.setDuration(FOCUS_FRAME_CYCLE_MS);
         mFocusFrameAnimator.setRepeatCount(ValueAnimator.INFINITE);
         mFocusFrameAnimator.setInterpolator(new LinearInterpolator());
         mFocusFrameAnimator.addUpdateListener(animation -> {
-            float hue = (startHue + (float) animation.getAnimatedValue()) % 360f;
+            // Swings either side of the artwork's own hue rather than touring the whole wheel, so
+            // the frame stays recognisably the colour of what it is framing
+            double phase = Math.toRadians((float) animation.getAnimatedValue());
+            float hue = (mFrameBaseHue + (float) Math.sin(phase) * FOCUS_FRAME_SWING + 360f) % 360f;
             frame.setStroke(strokeWidth, Color.HSVToColor(new float[]{hue, FOCUS_FRAME_SATURATION, 1f}));
         });
         mFocusFrameAnimator.start();
+    }
+
+    /**
+     * Takes the frame's base hue from the artwork, so the glow belongs to the poster it surrounds.
+     *
+     * Extraction runs once per item and off the main thread. Until it lands the previous hue keeps
+     * being used: focus moves far faster than a bitmap can be analysed, and a frame that blinks to
+     * a default colour on the way past every card would be worse than one that lags a moment.
+     */
+    private void resolveAccentHue() {
+        String key = paletteKey();
+        if (key == null) return;
+
+        Integer cached = ArtworkPalette.INSTANCE.cached(key);
+        if (cached != null) {
+            mFrameBaseHue = hueOf(cached);
+            return;
+        }
+
+        Drawable artwork = binding.mainImage.getDrawable();
+        if (artwork == null) return;
+
+        PALETTE_EXECUTOR.execute(() -> {
+            Integer accent = ArtworkPalette.INSTANCE.accentFor(key, artwork);
+            if (accent == null) return;
+
+            post(() -> {
+                // Cards recycle, so this may now be showing something else entirely
+                if (key.equals(paletteKey())) mFrameBaseHue = hueOf(accent);
+            });
+        });
+    }
+
+    private String paletteKey() {
+        if (mPreviewItem != null && mPreviewItem.getId() != null) return mPreviewItem.getId().toString();
+
+        // Rows that carry no item still get a stable key for as long as the artwork is loaded
+        Drawable artwork = binding.mainImage.getDrawable();
+        return artwork == null ? null : String.valueOf(System.identityHashCode(artwork));
+    }
+
+    private static float hueOf(int color) {
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+        return hsv[0];
+    }
+
+    /**
+     * Tips the card back a few degrees and lets it settle flat as focus arrives.
+     *
+     * Driven by a ValueAnimator rather than animate(), because leanback drives the focus scale
+     * through its own ViewPropertyAnimator on this same view and the two would fight.
+     */
+    private void startDepthSettle() {
+        stopDepthSettle();
+
+        mDepthAnimator = ValueAnimator.ofFloat(-DEPTH_TILT_DEGREES, 0f);
+        mDepthAnimator.setDuration(DEPTH_SETTLE_MS);
+        mDepthAnimator.setInterpolator(new OvershootInterpolator(1.6f));
+        mDepthAnimator.addUpdateListener(animation -> setRotationX((float) animation.getAnimatedValue()));
+        mDepthAnimator.start();
+    }
+
+    private void stopDepthSettle() {
+        if (mDepthAnimator != null) {
+            mDepthAnimator.cancel();
+            mDepthAnimator = null;
+        }
+
+        setRotationX(0f);
     }
 
     private void stopFocusFrameAnimation() {
@@ -195,6 +300,7 @@ public class LegacyImageCardView extends BaseCardView {
                 // or opens out for a trailer that turns out not to play
                 binding.trailerPreview.animate().alpha(1f).setDuration(400).start();
                 expandForTrailer();
+                showTrailerOverlays();
                 return kotlin.Unit.INSTANCE;
             });
 
@@ -208,7 +314,63 @@ public class LegacyImageCardView extends BaseCardView {
         TrailerPreviewPlayer.INSTANCE.stop(this);
         binding.trailerPreview.setVisibility(GONE);
         binding.trailerPreview.setAlpha(0f);
+        hideTrailerOverlays();
         collapseAfterTrailer();
+    }
+
+    /**
+     * Brings up the furniture that turns a video playing in a card into something that looks
+     * intentional: edges pulled down, the name of what is playing, and a hint of how far in it is.
+     */
+    private void showTrailerOverlays() {
+        binding.trailerVignette.setVisibility(VISIBLE);
+        binding.trailerVignette.setAlpha(0f);
+        binding.trailerVignette.animate().alpha(1f).setDuration(400).start();
+
+        String name = mPreviewItem != null ? mPreviewItem.getName() : null;
+        if (name != null) {
+            binding.trailerTitle.setText(name);
+            binding.trailerTitle.setVisibility(VISIBLE);
+            binding.trailerTitle.setAlpha(0f);
+            // Trails the picture slightly so the name arrives once there is something behind it
+            binding.trailerTitle.animate().alpha(1f).setStartDelay(250).setDuration(400).start();
+        }
+
+        binding.trailerProgress.setProgress(0);
+        binding.trailerProgress.setVisibility(VISIBLE);
+        startTrailerProgressTicker();
+    }
+
+    private void hideTrailerOverlays() {
+        stopTrailerProgressTicker();
+
+        binding.trailerVignette.animate().cancel();
+        binding.trailerVignette.setVisibility(GONE);
+        binding.trailerTitle.animate().cancel();
+        binding.trailerTitle.setVisibility(GONE);
+        binding.trailerProgress.setVisibility(GONE);
+    }
+
+    private void startTrailerProgressTicker() {
+        stopTrailerProgressTicker();
+
+        mTrailerProgressTick = new Runnable() {
+            @Override
+            public void run() {
+                float progress = TrailerPreviewPlayer.INSTANCE.progressOf(LegacyImageCardView.this);
+                binding.trailerProgress.setProgress(Math.round(progress * binding.trailerProgress.getMax()));
+                postDelayed(this, TRAILER_PROGRESS_INTERVAL_MS);
+            }
+        };
+
+        post(mTrailerProgressTick);
+    }
+
+    private void stopTrailerProgressTicker() {
+        if (mTrailerProgressTick == null) return;
+
+        removeCallbacks(mTrailerProgressTick);
+        mTrailerProgressTick = null;
     }
 
     /**
@@ -263,6 +425,7 @@ public class LegacyImageCardView extends BaseCardView {
     protected void onDetachedFromWindow() {
         // Rows recycle cards while scrolling, so a focused card can be torn down mid-animation.
         stopFocusFrameAnimation();
+        stopDepthSettle();
         stopTrailerPreview();
         super.onDetachedFromWindow();
     }

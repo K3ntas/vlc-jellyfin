@@ -51,6 +51,53 @@
             android:layout_alignBottom="@id/main_image"
             android:visibility="gone" />
 
+        <!-- Trailer furniture. All of it sits above the video surface and below the focus frame,
+             and all of it is hidden until a preview actually starts. -->
+        <View
+            android:id="@+id/trailerVignette"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignTop="@id/main_image"
+            android:layout_alignEnd="@id/main_image"
+            android:layout_alignBottom="@id/main_image"
+            android:background="@drawable/trailer_preview_vignette"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/trailerTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignEnd="@id/main_image"
+            android:layout_above="@+id/trailerProgress"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="6dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:shadowColor="#000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="The Mandalorian and Grogu" />
+
+        <ProgressBar
+            android:id="@+id/trailerProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignEnd="@id/main_image"
+            android:layout_alignBottom="@id/main_image"
+            android:max="1000"
+            android:progressDrawable="@drawable/trailer_preview_progress"
+            android:visibility="gone" />
+
         <!-- The focus frame draws here rather than on the artwork's foreground so that it stays
              visible over a running trailer preview, which would otherwise cover it. -->
         <View

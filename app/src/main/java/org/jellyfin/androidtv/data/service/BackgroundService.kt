@@ -1,6 +1,7 @@
 package org.jellyfin.androidtv.data.service
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import coil3.ImageLoader
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.jellyfin.androidtv.auth.model.Server
 import org.jellyfin.androidtv.preference.UserPreferences
+import org.jellyfin.androidtv.util.ArtworkPalette
 import org.jellyfin.androidtv.util.apiclient.getUrl
 import org.jellyfin.androidtv.util.apiclient.itemBackdropImages
 import org.jellyfin.androidtv.util.apiclient.parentBackdropImages
@@ -63,9 +65,18 @@ class BackgroundService(
 	private var _currentBackground = MutableStateFlow<ImageBitmap?>(null)
 	private var _blurBackground = MutableStateFlow(false)
 	private var _enabled = MutableStateFlow(true)
+	private var _accent = MutableStateFlow(ArtworkPalette.FALLBACK)
 	val currentBackground get() = _currentBackground.asStateFlow()
 	val blurBackground get() = _blurBackground.asStateFlow()
 	val enabled get() = _enabled.asStateFlow()
+
+	/**
+	 * Colour of whatever is currently on the background, for the interface to pick up.
+	 *
+	 * Taken from the backdrop rather than the poster because this is what tints full-screen
+	 * effects, and those should agree with the largest thing on screen.
+	 */
+	val accent get() = _accent.asStateFlow()
 
 	/**
 	 * Use all available backdrops from [baseItem] as background.
@@ -144,9 +155,19 @@ class BackgroundService(
 		}
 	}
 
-	private suspend fun loadBackdrop(url: String): ImageBitmap? = imageLoader.execute(
-		request = ImageRequest.Builder(context).data(url).build()
-	).image?.toBitmap()?.asImageBitmap()
+	private suspend fun loadBackdrop(url: String): ImageBitmap? {
+		val bitmap = imageLoader.execute(
+			request = ImageRequest.Builder(context).data(url).build()
+		).image?.toBitmap() ?: return null
+
+		// Already on an IO dispatcher, and the result is cached against the url so revisiting an
+		// item costs nothing. An unreadable backdrop leaves the previous accent in place, which
+		// looks like nothing happening rather than a flicker to a default colour.
+		ArtworkPalette.accentFor(url, BitmapDrawable(context.resources, bitmap))
+			?.let { _accent.value = it }
+
+		return bitmap.asImageBitmap()
+	}
 
 	fun clearBackgrounds() {
 		loadBackgroundsJob?.cancel()

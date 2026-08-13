@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Darkens the corners of a playing trailer.
+
+    Card artwork is composed to be read at this size; video is not, so a frame dropped straight
+    into a card tends to look flat and slightly washed. Pulling the edges down gives it a centre
+    again and separates it from whatever sits behind the card.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <gradient
+        android:type="radial"
+        android:gradientRadius="75%p"
+        android:startColor="#00000000"
+        android:centerColor="#1A000000"
+        android:endColor="#8C000000" />
+
+</shape>
