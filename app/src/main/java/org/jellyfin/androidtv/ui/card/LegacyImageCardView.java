@@ -319,6 +319,7 @@ public class LegacyImageCardView extends BaseCardView {
             return;
         }
 
+        if (binding.infoField != null) binding.infoField.setVisibility(VISIBLE);
         binding.title.setVisibility(VISIBLE);
         binding.title.setText(text);
         setTextMaxLines();
@@ -393,6 +394,20 @@ public class LegacyImageCardView extends BaseCardView {
     /** @see #hideTitleText() */
     public void hideContentText() {
         if (binding.contentText != null) binding.contentText.setVisibility(GONE);
+    }
+
+    /**
+     * Hides the whole strip under the artwork.
+     *
+     * Hiding the two labels alone leaves the strip reserving its full height, so rows stayed as
+     * far apart as when they carried text and the gap read as wasted space. Collapsing it lets the
+     * rows close up.
+     */
+    public void hideInfoArea() {
+        hideTitleText();
+        hideContentText();
+
+        if (binding.infoField != null) binding.infoField.setVisibility(GONE);
     }
 
     public CharSequence getContentText() {

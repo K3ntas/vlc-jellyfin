@@ -158,6 +158,11 @@ class RatingPopup(
             gravity = Gravity.CENTER
             textSize = 24f
             text = "\u2606" // Empty star
+            includeFontPadding = false
+            // The star glyph does not sit centred in its own line box - it draws low, which left
+            // the focus background looking top-heavy. Trimming the bottom lifts the text back to
+            // the middle of the box the background fills.
+            setPadding(0, 0, 0, Utils.convertDpToPixel(context, 4))
             setTextColor(Color.parseColor("#666666"))
             isFocusable = true
             isFocusableInTouchMode = true

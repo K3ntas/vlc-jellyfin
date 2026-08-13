@@ -8,10 +8,11 @@ import kotlinx.serialization.json.JsonNames
 /**
  * Models for the social endpoints of the Jellyfin Ratings plugin (`/Ratings/Social/...`).
  *
- * Note these use camelCase, unlike the rating endpoints in [org.jellyfin.androidtv.data.ratings]
- * which are PascalCase. The social controller returns C# anonymous objects, and the plugin's own
- * web client reads them as camelCase. Every field carries a default so an unexpected shape yields
- * empty values rather than throwing.
+ * These use camelCase: the social controller returns C# anonymous objects, and the plugin's own
+ * web client reads them as camelCase. The rating endpoints in
+ * [org.jellyfin.androidtv.data.ratings] turned out to do the same, so both sets accept either
+ * casing. Every field carries a default so an unexpected shape yields empty values rather than
+ * throwing.
  */
 
 /** A media item pinned to a profile. */

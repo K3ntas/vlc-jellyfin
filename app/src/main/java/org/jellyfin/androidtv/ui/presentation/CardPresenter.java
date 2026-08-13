@@ -350,8 +350,7 @@ public class CardPresenter extends Presenter {
 
         // Nothing is written under the artwork: the poster carries the title, and the line beneath
         // it was left showing bare metadata like "R" or a release string once the name had gone.
-        holder.mCardView.hideTitleText();
-        holder.mCardView.hideContentText();
+        holder.mCardView.hideInfoArea();
         if (ImageType.POSTER.equals(mImageType)) {
             holder.mCardView.setOverlayInfo(rowItem);
         }
