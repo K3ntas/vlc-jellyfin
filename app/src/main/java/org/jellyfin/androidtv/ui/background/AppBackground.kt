@@ -82,19 +82,19 @@ private fun Modifier.backdropDrift(): Modifier {
 		initialValue = 0f,
 		targetValue = 1f,
 		animationSpec = infiniteRepeatable(
-			animation = tween(durationMillis = 40_000, easing = LinearEasing),
+			animation = tween(durationMillis = 28_000, easing = LinearEasing),
 			repeatMode = RepeatMode.Reverse,
 		),
 		label = "BackdropDriftProgress",
 	)
 
 	return graphicsLayer {
-		val zoom = 1f + progress * 0.06f
+		val zoom = 1f + progress * 0.11f
 		scaleX = zoom
 		scaleY = zoom
 		// A touch of pan so it is not purely a zoom, which on its own can look like a mistake
-		translationX = progress * size.width * 0.012f
-		translationY = progress * size.height * -0.008f
+		translationX = progress * size.width * 0.025f
+		translationY = progress * size.height * -0.018f
 	}
 }
 

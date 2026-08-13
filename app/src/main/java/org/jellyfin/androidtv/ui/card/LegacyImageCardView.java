@@ -80,10 +80,13 @@ public class LegacyImageCardView extends BaseCardView {
     private static final float FOCUS_FRAME_SWING = 25f;
 
     /** A brief tilt as focus lands, so the card reads as being pushed rather than just scaled. */
-    private static final float DEPTH_TILT_DEGREES = 7f;
+    private static final float DEPTH_TILT_DEGREES = 11f;
     private static final long DEPTH_SETTLE_MS = 420L;
 
     private static final long TRAILER_PROGRESS_INTERVAL_MS = 500L;
+
+    /** Enough to read the name against a moving picture, not enough to sit on top of it. */
+    private static final float TRAILER_TITLE_ALPHA = 0.72f;
 
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
@@ -329,11 +332,17 @@ public class LegacyImageCardView extends BaseCardView {
 
         String name = mPreviewItem != null ? mPreviewItem.getName() : null;
         if (name != null) {
-            binding.trailerTitle.setText(name);
+            Integer year = mPreviewItem.getProductionYear();
+            binding.trailerTitle.setText(year != null ? name + "  ·  " + year : name);
             binding.trailerTitle.setVisibility(VISIBLE);
             binding.trailerTitle.setAlpha(0f);
-            // Trails the picture slightly so the name arrives once there is something behind it
-            binding.trailerTitle.animate().alpha(1f).setStartDelay(250).setDuration(400).start();
+            // Held below full white: the label is there to say what is playing, not to compete
+            // with the picture it sits on. Trails the video slightly so it arrives onto something.
+            binding.trailerTitle.animate()
+                    .alpha(TRAILER_TITLE_ALPHA)
+                    .setStartDelay(250)
+                    .setDuration(400)
+                    .start();
         }
 
         binding.trailerProgress.setProgress(0);

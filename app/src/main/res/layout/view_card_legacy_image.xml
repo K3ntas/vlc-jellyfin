@@ -75,16 +75,16 @@
             android:paddingEnd="10dp"
             android:paddingBottom="6dp"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="sans-serif"
             android:maxLines="1"
             android:shadowColor="#000000"
             android:shadowDx="0"
             android:shadowDy="1"
-            android:shadowRadius="4"
+            android:shadowRadius="5"
             android:textColor="@color/white"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:visibility="gone"
-            tools:text="The Mandalorian and Grogu" />
+            tools:text="The Mandalorian and Grogu  ·  2026" />
 
         <ProgressBar
             android:id="@+id/trailerProgress"
