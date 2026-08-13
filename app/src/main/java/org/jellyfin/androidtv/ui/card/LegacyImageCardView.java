@@ -50,8 +50,6 @@ public class LegacyImageCardView extends BaseCardView {
     private int BANNER_SIZE = Utils.convertDpToPixel(getContext(), 50);
     private int noIconMargin = Utils.convertDpToPixel(getContext(), 5);
     private NumberFormat nf = NumberFormat.getInstance();
-    private boolean mShowOverlayOnFocus = false;
-    private String mOverlayName = null;
     private GradientDrawable mFocusFrame = null;
     private ValueAnimator mFocusFrameAnimator = null;
     private BaseItemDto mPreviewItem = null;
@@ -69,7 +67,6 @@ public class LegacyImageCardView extends BaseCardView {
     /** Which badges a running preview is currently covering up, so only those are put back. */
     private boolean mWatchedIndicatorHidden = false;
     private boolean mRatingBadgeHidden = false;
-    private boolean mNameOverlayHidden = false;
 
     /** Base hue of the focus frame, taken from the artwork once it has been analysed. */
     private float mFrameBaseHue = (float) (Math.random() * 360f);
@@ -133,7 +130,6 @@ public class LegacyImageCardView extends BaseCardView {
 
         setForeground(null);
 
-        // Focus listener for Netflix-style overlay
         setOnFocusChangeListener((v, hasFocus) -> {
             // Frame the artwork so the focused card is obvious while moving along a row. This is
             // driven from here rather than a state selector because focus lands on the card view
@@ -164,21 +160,6 @@ public class LegacyImageCardView extends BaseCardView {
                 stopTrailerPreview();
             }
 
-            if (mShowOverlayOnFocus && mOverlayName != null) {
-                if (hasFocus) {
-                    binding.overlayText.setText(mOverlayName);
-                    binding.nameOverlay.setVisibility(VISIBLE);
-                    binding.nameOverlay.setAlpha(0f);
-                    binding.nameOverlay.animate().alpha(1f).setDuration(200).start();
-                    // Enable marquee scrolling
-                    binding.overlayText.setSelected(true);
-                } else {
-                    binding.nameOverlay.animate().alpha(0f).setDuration(150).withEndAction(() -> {
-                        binding.nameOverlay.setVisibility(GONE);
-                        binding.overlayText.setSelected(false);
-                    }).start();
-                }
-            }
         });
     }
 
@@ -360,7 +341,12 @@ public class LegacyImageCardView extends BaseCardView {
     private void showTrailerOverlays() {
         binding.trailerVignette.setVisibility(VISIBLE);
         binding.trailerVignette.setAlpha(0f);
-        binding.trailerVignette.animate().alpha(1f).setDuration(400).start();
+        binding.trailerVignette.animate()
+                .alpha(1f)
+                .setStartDelay(0)
+                .setDuration(400)
+                .withEndAction(() -> fadeOutTrailerFurniture(binding.trailerVignette, 1f))
+                .start();
 
         String name = mPreviewItem != null ? mPreviewItem.getName() : null;
         if (name != null) {
@@ -375,16 +361,14 @@ public class LegacyImageCardView extends BaseCardView {
                     .alpha(TRAILER_TITLE_ALPHA)
                     .setStartDelay(250)
                     .setDuration(400)
-                    .withEndAction(() -> binding.trailerTitle.animate()
-                            .alpha(0f)
-                            .setStartDelay(TRAILER_TITLE_HOLD_MS)
-                            .setDuration(TRAILER_TITLE_FADE_OUT_MS)
-                            .start())
+                    .withEndAction(() -> fadeOutTrailerFurniture(binding.trailerTitle, TRAILER_TITLE_ALPHA))
                     .start();
         }
 
         binding.trailerProgress.setProgress(0);
         binding.trailerProgress.setVisibility(VISIBLE);
+        binding.trailerProgress.animate().cancel();
+        fadeOutTrailerFurniture(binding.trailerProgress, 1f);
         startTrailerProgressTicker();
 
         // Both badges describe the artwork, not the trailer now playing over it, and they sit in
@@ -392,11 +376,6 @@ public class LegacyImageCardView extends BaseCardView {
         // back only if it was there to begin with.
         mWatchedIndicatorHidden = hideBadge(binding.watchedIndicator);
         mRatingBadgeHidden = hideBadge(binding.ratingBadgeOverlay);
-
-        // Library grids label the focused card with its name in full white. The trailer already
-        // carries the name, dimmer and with the year, so leaving both up stacks two copies of the
-        // same title on top of each other.
-        mNameOverlayHidden = hideBadge(binding.nameOverlay);
     }
 
     /** Fades [badge] out if it is showing. Returns whether it had anything to hide. */
@@ -420,7 +399,24 @@ public class LegacyImageCardView extends BaseCardView {
         binding.trailerVignette.setVisibility(GONE);
         binding.trailerTitle.animate().cancel();
         binding.trailerTitle.setVisibility(GONE);
+        binding.trailerProgress.animate().cancel();
         binding.trailerProgress.setVisibility(GONE);
+    }
+
+    /**
+     * Sends the furniture away once the trailer has settled in, leaving nothing but the picture.
+     *
+     * The vignette goes with it rather than staying: it exists to frame a video that has just
+     * appeared inside a poster, and once the eye has accepted that, it is only darkening the
+     * corners of something the user is trying to watch.
+     */
+    private void fadeOutTrailerFurniture(View view, float from) {
+        view.setAlpha(from);
+        view.animate()
+                .alpha(0f)
+                .setStartDelay(TRAILER_TITLE_HOLD_MS)
+                .setDuration(TRAILER_TITLE_FADE_OUT_MS)
+                .start();
     }
 
     /**
@@ -436,11 +432,6 @@ public class LegacyImageCardView extends BaseCardView {
         if (mRatingBadgeHidden) {
             mRatingBadgeHidden = false;
             restoreBadge(binding.ratingBadgeOverlay);
-        }
-
-        if (mNameOverlayHidden) {
-            mNameOverlayHidden = false;
-            restoreBadge(binding.nameOverlay);
         }
     }
 
@@ -599,15 +590,13 @@ public class LegacyImageCardView extends BaseCardView {
         if (binding.title != null) binding.title.setVisibility(GONE);
     }
 
+    /**
+     * The name overlay is no longer shown on focus. Cards are artwork alone now, and a title
+     * printed over a poster that already carries one was only ever noise - the trailer preview
+     * puts the name up while it plays, which is the one moment the artwork is not visible.
+     */
     public void setOverlayText(String text) {
-        if (getCardType() == BaseCardView.CARD_TYPE_MAIN_ONLY) {
-            // Store for focus-based display
-            mOverlayName = text;
-            mShowOverlayOnFocus = true;
-            binding.nameOverlay.setVisibility(GONE);
-        } else {
-            binding.nameOverlay.setVisibility(GONE);
-        }
+        binding.nameOverlay.setVisibility(GONE);
     }
 
     public void setOverlayInfo(BaseRowItem item) {
@@ -617,11 +606,6 @@ public class LegacyImageCardView extends BaseCardView {
         if (binding.overlayText == null) return;
 
         if (getCardType() == BaseCardView.CARD_TYPE_MAIN_ONLY && item.getShowCardInfoOverlay()) {
-            // Store name for focus-based display (Netflix style)
-            mOverlayName = item.getFullName(getContext());
-            mShowOverlayOnFocus = true;
-
-            // Hide icons for movies/series - just show name on focus
             binding.icon.setVisibility(GONE);
             binding.overlayCount.setText(null);
             binding.nameOverlay.setVisibility(GONE);
