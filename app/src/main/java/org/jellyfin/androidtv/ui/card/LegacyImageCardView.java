@@ -81,12 +81,19 @@ public class LegacyImageCardView extends BaseCardView {
 
     /** A brief tilt as focus lands, so the card reads as being pushed rather than just scaled. */
     private static final float DEPTH_TILT_DEGREES = 11f;
-    private static final long DEPTH_SETTLE_MS = 420L;
+    private static final long DEPTH_SETTLE_MS = 560L;
+
+    /** Long enough to be a fade rather than a switch, short enough to keep up with the D-pad. */
+    private static final long FOCUS_FRAME_FADE_MS = 220L;
 
     private static final long TRAILER_PROGRESS_INTERVAL_MS = 500L;
 
-    /** Enough to read the name against a moving picture, not enough to sit on top of it. */
-    private static final float TRAILER_TITLE_ALPHA = 0.72f;
+    /**
+     * Enough to read the name against a moving picture, not enough to sit on top of it. Low
+     * because the shadow behind the text carries most of the legibility, so the glyphs themselves
+     * do not have to be bright.
+     */
+    private static final float TRAILER_TITLE_ALPHA = 0.45f;
 
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
@@ -121,7 +128,21 @@ public class LegacyImageCardView extends BaseCardView {
             // Frame the artwork so the focused card is obvious while moving along a row. This is
             // driven from here rather than a state selector because focus lands on the card view
             // while the frame belongs on the image inside it.
-            binding.focusFrame.setBackground(hasFocus ? getFocusFrame() : null);
+            //
+            // Faded rather than switched: appearing and vanishing outright makes moving along a
+            // row feel like a series of jumps, even though the card itself is animating.
+            binding.focusFrame.animate().cancel();
+
+            if (hasFocus) {
+                binding.focusFrame.setBackground(getFocusFrame());
+                binding.focusFrame.animate().alpha(1f).setDuration(FOCUS_FRAME_FADE_MS).start();
+            } else {
+                binding.focusFrame.animate()
+                        .alpha(0f)
+                        .setDuration(FOCUS_FRAME_FADE_MS)
+                        .withEndAction(() -> binding.focusFrame.setBackground(null))
+                        .start();
+            }
 
             if (hasFocus) {
                 startFocusFrameAnimation();
@@ -260,7 +281,8 @@ public class LegacyImageCardView extends BaseCardView {
 
         mDepthAnimator = ValueAnimator.ofFloat(-DEPTH_TILT_DEGREES, 0f);
         mDepthAnimator.setDuration(DEPTH_SETTLE_MS);
-        mDepthAnimator.setInterpolator(new OvershootInterpolator(1.6f));
+        // A gentle overshoot: enough to feel like the card settles, not enough to bounce
+        mDepthAnimator.setInterpolator(new OvershootInterpolator(0.7f));
         mDepthAnimator.addUpdateListener(animation -> setRotationX((float) animation.getAnimatedValue()));
         mDepthAnimator.start();
     }
