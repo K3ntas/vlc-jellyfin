@@ -27,6 +27,9 @@ import org.jellyfin.androidtv.ui.itemhandling.BaseRowItem;
 import org.jellyfin.androidtv.util.ContextExtensionsKt;
 import org.jellyfin.androidtv.util.DateTimeExtensionsKt;
 import org.jellyfin.androidtv.util.Utils;
+import org.jellyfin.sdk.api.client.ApiClient;
+import org.jellyfin.sdk.model.api.BaseItemDto;
+import org.koin.java.KoinJavaComponent;
 
 import java.text.NumberFormat;
 
@@ -44,6 +47,8 @@ public class LegacyImageCardView extends BaseCardView {
     private String mOverlayName = null;
     private GradientDrawable mFocusFrame = null;
     private ValueAnimator mFocusFrameAnimator = null;
+    private BaseItemDto mPreviewItem = null;
+    private TrailerPreviewController mTrailerController = null;
 
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
@@ -79,8 +84,10 @@ public class LegacyImageCardView extends BaseCardView {
 
             if (hasFocus) {
                 startFocusFrameAnimation();
+                startTrailerDwell();
             } else {
                 stopFocusFrameAnimation();
+                stopTrailerPreview();
             }
 
             if (mShowOverlayOnFocus && mOverlayName != null) {
@@ -157,10 +164,45 @@ public class LegacyImageCardView extends BaseCardView {
         }
     }
 
+    /**
+     * Asks for a trailer once the card has held focus long enough. Nothing is requested while
+     * moving along a row; see TrailerPreviewController for why resolution is deferred.
+     */
+    private void startTrailerDwell() {
+        if (mPreviewItem == null) return;
+
+        if (mTrailerController == null) {
+            ApiClient api = KoinJavaComponent.get(ApiClient.class);
+            mTrailerController = new TrailerPreviewController(api);
+        }
+
+        mTrailerController.onFocused(mPreviewItem, url -> {
+            binding.trailerPreview.setVisibility(VISIBLE);
+            binding.trailerPreview.setAlpha(0f);
+
+            TrailerPreviewPlayer.INSTANCE.play(getContext(), this, binding.trailerPreview, url, () -> {
+                // Only reveal once frames are actually arriving, so the card never flashes black
+                binding.trailerPreview.animate().alpha(1f).setDuration(400).start();
+                return kotlin.Unit.INSTANCE;
+            });
+
+            return kotlin.Unit.INSTANCE;
+        });
+    }
+
+    private void stopTrailerPreview() {
+        if (mTrailerController != null) mTrailerController.cancel();
+
+        TrailerPreviewPlayer.INSTANCE.stop(this);
+        binding.trailerPreview.setVisibility(GONE);
+        binding.trailerPreview.setAlpha(0f);
+    }
+
     @Override
     protected void onDetachedFromWindow() {
         // Rows recycle cards while scrolling, so a focused card can be torn down mid-animation.
         stopFocusFrameAnimation();
+        stopTrailerPreview();
         super.onDetachedFromWindow();
     }
 
@@ -227,6 +269,9 @@ public class LegacyImageCardView extends BaseCardView {
     }
 
     public void setOverlayInfo(BaseRowItem item) {
+        // Kept regardless of card type so the trailer preview knows what it is showing
+        mPreviewItem = item instanceof BaseItemDtoBaseRowItem ? item.getBaseItem() : null;
+
         if (binding.overlayText == null) return;
 
         if (getCardType() == BaseCardView.CARD_TYPE_MAIN_ONLY && item.getShowCardInfoOverlay()) {

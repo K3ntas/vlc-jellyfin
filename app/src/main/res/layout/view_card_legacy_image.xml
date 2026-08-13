@@ -39,6 +39,18 @@
             lb:layout_viewType="main"
             tools:src="@drawable/app_logo" />
 
+        <!-- Trailer preview surface. Sits directly over the artwork and stays hidden until a
+             preview actually starts, so cards cost nothing extra while scrolling. -->
+        <TextureView
+            android:id="@+id/trailerPreview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignTop="@id/main_image"
+            android:layout_alignEnd="@id/main_image"
+            android:layout_alignBottom="@id/main_image"
+            android:visibility="gone" />
+
         <ImageView
             android:id="@+id/favIcon"
             android:layout_width="25dp"
