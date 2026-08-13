@@ -385,8 +385,14 @@ public class LegacyImageCardView extends BaseCardView {
             return;
         }
 
+        binding.contentText.setVisibility(VISIBLE);
         binding.contentText.setText(text);
         setTextMaxLines();
+    }
+
+    /** @see #hideTitleText() */
+    public void hideContentText() {
+        if (binding.contentText != null) binding.contentText.setVisibility(GONE);
     }
 
     public CharSequence getContentText() {

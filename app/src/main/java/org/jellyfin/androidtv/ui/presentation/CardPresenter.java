@@ -348,8 +348,10 @@ public class CardPresenter extends Presenter {
         ViewHolder holder = (ViewHolder) viewHolder;
         holder.setItem(rowItem, mImageType, 130, 150, mStaticHeight);
 
+        // Nothing is written under the artwork: the poster carries the title, and the line beneath
+        // it was left showing bare metadata like "R" or a release string once the name had gone.
         holder.mCardView.hideTitleText();
-        holder.mCardView.setContentText(rowItem.getSubText(holder.mCardView.getContext()));
+        holder.mCardView.hideContentText();
         if (ImageType.POSTER.equals(mImageType)) {
             holder.mCardView.setOverlayInfo(rowItem);
         }
