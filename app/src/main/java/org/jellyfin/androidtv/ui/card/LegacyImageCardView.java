@@ -101,6 +101,10 @@ public class LegacyImageCardView extends BaseCardView {
 
     private static final long BADGE_FADE_MS = 300L;
 
+    /** Long enough to read the name, then a slow fade rather than a cut. */
+    private static final long TRAILER_TITLE_HOLD_MS = 3000L;
+    private static final long TRAILER_TITLE_FADE_OUT_MS = 1400L;
+
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
     /** Held back from fully saturated so the frame stays easy on the eye against artwork. */
@@ -365,11 +369,17 @@ public class LegacyImageCardView extends BaseCardView {
             binding.trailerTitle.setVisibility(VISIBLE);
             binding.trailerTitle.setAlpha(0f);
             // Held below full white: the label is there to say what is playing, not to compete
-            // with the picture it sits on. Trails the video slightly so it arrives onto something.
+            // with the picture it sits on. Trails the video slightly so it arrives onto something,
+            // then dims away entirely - it has done its job by then, and the trailer is the point.
             binding.trailerTitle.animate()
                     .alpha(TRAILER_TITLE_ALPHA)
                     .setStartDelay(250)
                     .setDuration(400)
+                    .withEndAction(() -> binding.trailerTitle.animate()
+                            .alpha(0f)
+                            .setStartDelay(TRAILER_TITLE_HOLD_MS)
+                            .setDuration(TRAILER_TITLE_FADE_OUT_MS)
+                            .start())
                     .start();
         }
 
