@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jellyfin.androidtv.data.trailer.YouTubeStreamResolver
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -29,11 +30,19 @@ import kotlin.time.Duration.Companion.seconds
  */
 class TrailerPreviewController @JvmOverloads constructor(
 	private val api: ApiClient,
+	private val youTubeStreamResolver: YouTubeStreamResolver,
 	private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
 	companion object {
 		/** Long enough that passing over cards never triggers a request. */
-		val DWELL: Duration = 10.seconds
+		val DWELL: Duration = 5.seconds
+
+		/**
+		 * Items can list dozens of remote trailers, and each extraction is a network round trip.
+		 * The first few are the ones that are actually trailers; walking the whole list would just
+		 * spend a card's worth of time proving the rest are not playable either.
+		 */
+		const val MAX_TRAILER_ATTEMPTS = 3
 	}
 
 	private var pending: Job? = null
@@ -69,6 +78,9 @@ class TrailerPreviewController @JvmOverloads constructor(
 	/**
 	 * Prefers a trailer held by the server, which streams like any other item and never breaks.
 	 * Falls back to an external trailer url, which needs resolving before it can be played.
+	 *
+	 * In practice the fallback is the normal path: libraries populated from online metadata carry
+	 * youtube links and no local trailer files at all.
 	 */
 	private suspend fun resolve(id: UUID, item: BaseItemDto): String? = withContext(Dispatchers.IO) {
 		// A trailer held by the server streams like any other item and never breaks, so try it first
@@ -82,15 +94,20 @@ class TrailerPreviewController @JvmOverloads constructor(
 		// so the row copy of the item cannot answer this. Re-read the full item - one request, for
 		// one card, only once the dwell has already elapsed.
 		val full = runCatching { api.userLibraryApi.getItem(id).content }.getOrNull() ?: item
-		val external = full.remoteTrailers.orEmpty().firstNotNullOfOrNull { it.url }
+		val remote = full.remoteTrailers.orEmpty().mapNotNull { it.url }
 
 		Timber.d(
 			"Trailer resolve for %s: local=%d remote=%d",
 			item.name,
 			local?.size ?: 0,
-			full.remoteTrailers.orEmpty().size,
+			remote.size,
 		)
 
-		external
+		// A youtube watch url is a web page, not a stream, so it has to be extracted before any
+		// player can open it. Later entries are tried when one fails - a pulled or region locked
+		// video should not cost the card its preview when other trailers are listed.
+		remote.filter { youTubeStreamResolver.canResolve(it) }
+			.take(MAX_TRAILER_ATTEMPTS)
+			.firstNotNullOfOrNull { youTubeStreamResolver.resolve(it) }
 	}
 }

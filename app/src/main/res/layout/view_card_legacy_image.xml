@@ -51,6 +51,17 @@
             android:layout_alignBottom="@id/main_image"
             android:visibility="gone" />
 
+        <!-- The focus frame draws here rather than on the artwork's foreground so that it stays
+             visible over a running trailer preview, which would otherwise cover it. -->
+        <View
+            android:id="@+id/focusFrame"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignTop="@id/main_image"
+            android:layout_alignEnd="@id/main_image"
+            android:layout_alignBottom="@id/main_image" />
+
         <ImageView
             android:id="@+id/favIcon"
             android:layout_width="25dp"

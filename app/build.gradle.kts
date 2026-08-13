@@ -175,6 +175,9 @@ dependencies {
 	implementation(libs.androidx.media3.ui)
 	implementation(libs.jellyfin.androidx.media3.ffmpeg.decoder)
 
+	// Resolves youtube trailer urls to direct streams for card previews
+	implementation(libs.newpipe.extractor)
+
 	// Markdown
 	implementation(libs.bundles.markwon)
 

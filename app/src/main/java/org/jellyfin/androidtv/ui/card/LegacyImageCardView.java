@@ -12,6 +12,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 
@@ -23,6 +24,7 @@ import org.jellyfin.androidtv.R;
 import org.jellyfin.androidtv.databinding.ViewCardLegacyImageBinding;
 import org.jellyfin.androidtv.ui.AsyncImageView;
 import org.jellyfin.androidtv.ui.itemhandling.BaseItemDtoBaseRowItem;
+import org.jellyfin.androidtv.data.trailer.YouTubeStreamResolver;
 import org.jellyfin.androidtv.ui.itemhandling.BaseRowItem;
 import org.jellyfin.androidtv.util.ContextExtensionsKt;
 import org.jellyfin.androidtv.util.DateTimeExtensionsKt;
@@ -49,6 +51,13 @@ public class LegacyImageCardView extends BaseCardView {
     private ValueAnimator mFocusFrameAnimator = null;
     private BaseItemDto mPreviewItem = null;
     private TrailerPreviewController mTrailerController = null;
+    private ValueAnimator mTrailerExpandAnimator = null;
+    /** The artwork's own width, remembered so the card can close back to it after a preview. */
+    private int mCollapsedImageWidth = 0;
+
+    /** Trailers are widescreen, so the card takes that shape while one plays. */
+    private static final float TRAILER_ASPECT = 16f / 9f;
+    private static final long TRAILER_EXPAND_MS = 300L;
 
     /** One full trip around the colour wheel, slow enough to read as a drift rather than a flash. */
     private static final long FOCUS_FRAME_CYCLE_MS = 12000L;
@@ -80,7 +89,7 @@ public class LegacyImageCardView extends BaseCardView {
             // Frame the artwork so the focused card is obvious while moving along a row. This is
             // driven from here rather than a state selector because focus lands on the card view
             // while the frame belongs on the image inside it.
-            binding.mainImage.setForeground(hasFocus ? getFocusFrame() : null);
+            binding.focusFrame.setBackground(hasFocus ? getFocusFrame() : null);
 
             if (hasFocus) {
                 startFocusFrameAnimation();
@@ -173,7 +182,8 @@ public class LegacyImageCardView extends BaseCardView {
 
         if (mTrailerController == null) {
             ApiClient api = KoinJavaComponent.get(ApiClient.class);
-            mTrailerController = new TrailerPreviewController(api);
+            YouTubeStreamResolver resolver = KoinJavaComponent.get(YouTubeStreamResolver.class);
+            mTrailerController = new TrailerPreviewController(api, resolver);
         }
 
         mTrailerController.onFocused(mPreviewItem, url -> {
@@ -182,7 +192,9 @@ public class LegacyImageCardView extends BaseCardView {
 
             TrailerPreviewPlayer.INSTANCE.play(getContext(), this, binding.trailerPreview, url, () -> {
                 // Only reveal once frames are actually arriving, so the card never flashes black
+                // or opens out for a trailer that turns out not to play
                 binding.trailerPreview.animate().alpha(1f).setDuration(400).start();
+                expandForTrailer();
                 return kotlin.Unit.INSTANCE;
             });
 
@@ -196,6 +208,55 @@ public class LegacyImageCardView extends BaseCardView {
         TrailerPreviewPlayer.INSTANCE.stop(this);
         binding.trailerPreview.setVisibility(GONE);
         binding.trailerPreview.setAlpha(0f);
+        collapseAfterTrailer();
+    }
+
+    /**
+     * Widens the card to a widescreen shape for the duration of the preview.
+     *
+     * Trailers are 16:9 while most cards are portrait posters, so the artwork's proportions are
+     * wrong for video. The height is left alone and only the width grows: the row's other cards
+     * keep their baseline, and the card opens out sideways rather than the whole row shifting.
+     */
+    private void expandForTrailer() {
+        ViewGroup.LayoutParams lp = binding.mainImage.getLayoutParams();
+
+        if (mCollapsedImageWidth == 0) mCollapsedImageWidth = lp.width;
+
+        int target = Math.round(lp.height * TRAILER_ASPECT);
+        // Thumbnail cards are already wide enough, and shrinking one would look like a glitch
+        if (target <= mCollapsedImageWidth) return;
+
+        animateImageWidth(target);
+    }
+
+    private void collapseAfterTrailer() {
+        if (mCollapsedImageWidth == 0) return;
+
+        animateImageWidth(mCollapsedImageWidth);
+    }
+
+    private void animateImageWidth(int target) {
+        cancelTrailerExpansion();
+
+        ViewGroup.LayoutParams lp = binding.mainImage.getLayoutParams();
+        if (lp.width == target) return;
+
+        mTrailerExpandAnimator = ValueAnimator.ofInt(lp.width, target);
+        mTrailerExpandAnimator.setDuration(TRAILER_EXPAND_MS);
+        mTrailerExpandAnimator.setInterpolator(new DecelerateInterpolator());
+        mTrailerExpandAnimator.addUpdateListener(animation -> {
+            lp.width = (int) animation.getAnimatedValue();
+            binding.mainImage.setLayoutParams(lp);
+        });
+        mTrailerExpandAnimator.start();
+    }
+
+    private void cancelTrailerExpansion() {
+        if (mTrailerExpandAnimator != null) {
+            mTrailerExpandAnimator.cancel();
+            mTrailerExpandAnimator = null;
+        }
     }
 
     @Override
@@ -237,6 +298,11 @@ public class LegacyImageCardView extends BaseCardView {
     }
 
     public void setMainImageDimensions(int width, int height, ImageView.ScaleType scaleType) {
+        // Cards are recycled, so a card being rebound while expanded must forget the old artwork's
+        // width or it would later shrink back to a size that belongs to a different item.
+        cancelTrailerExpansion();
+        mCollapsedImageWidth = 0;
+
         ViewGroup.LayoutParams lp = binding.mainImage.getLayoutParams();
         lp.width = Math.round(width * getResources().getDisplayMetrics().density);
         lp.height = Math.round(height * getResources().getDisplayMetrics().density);

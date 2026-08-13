@@ -38,6 +38,7 @@ kotlinx-coroutines = "1.10.2"
 kotlinx-serialization = "1.9.0"
 markwon = "4.6.2"
 mockk = "1.14.7"
+newpipe-extractor = "v0.26.4"
 vlc = "3.6.0"
 slf4j-timber = "0.0.4"
 timber = "5.0.1"
@@ -100,6 +101,9 @@ androidx-media3-session = { module = "androidx.media3:media3-session", version.r
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "androidx-media3" }
 jellyfin-androidx-media3-ffmpeg-decoder = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version.ref = "jellyfin-androidx-media" }
 vlc-android = { module = "org.videolan.android:libvlc-all", version.ref = "vlc" }
+
+# Trailer previews - resolves a youtube watch url to a direct stream
+newpipe-extractor = { module = "com.github.TeamNewPipe:NewPipeExtractor", version.ref = "newpipe-extractor" }
 
 # Markwon
 markwon-core = { module = "io.noties.markwon:core", version.ref = "markwon" }

@@ -23,6 +23,7 @@ import org.jellyfin.androidtv.data.eventhandling.SocketHandler
 import org.jellyfin.androidtv.data.model.DataRefreshService
 import org.jellyfin.androidtv.data.ratings.RatingsRepository
 import org.jellyfin.androidtv.data.social.SocialRepository
+import org.jellyfin.androidtv.data.trailer.YouTubeStreamResolver
 import org.jellyfin.androidtv.ui.social.ProfileViewModel
 import org.jellyfin.androidtv.data.repository.CustomMessageRepository
 import org.jellyfin.androidtv.data.repository.CustomMessageRepositoryImpl
@@ -180,6 +181,12 @@ val appModule = module {
 		val okHttpFactory = get<OkHttpFactory>()
 		val httpClientOptions = get<HttpClientOptions>()
 		SocialRepository(get(), okHttpFactory.createClient(httpClientOptions))
+	}
+
+	single {
+		val okHttpFactory = get<OkHttpFactory>()
+		val httpClientOptions = get<HttpClientOptions>()
+		YouTubeStreamResolver(okHttpFactory.createClient(httpClientOptions))
 	}
 
 	viewModel { StartupViewModel(get(), get(), get(), get()) }
