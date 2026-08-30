@@ -43,6 +43,7 @@ import org.jellyfin.androidtv.ui.navigation.Destinations
 import org.jellyfin.androidtv.data.social.SocialRepository
 import org.jellyfin.androidtv.ui.navigation.NavigationRepository
 import org.jellyfin.androidtv.ui.playback.MediaManager
+import org.jellyfin.androidtv.ui.playback.PlaybackLauncher
 import org.jellyfin.androidtv.ui.settings.compat.SettingsViewModel
 import org.jellyfin.androidtv.util.apiclient.getUrl
 import org.jellyfin.androidtv.util.apiclient.primaryImage
@@ -128,6 +129,46 @@ private fun MainToolbar(
 		api = api,
 	)
 
+	// Recently watched dropdown. Pressing an entry starts playback rather than opening a page:
+	// the point of the list is getting back into something, and the detail screen is one press
+	// away from the artwork anyway.
+	val recentlyWatchedViewModel = koinViewModel<RecentlyWatchedViewModel>()
+	val recentEntries by recentlyWatchedViewModel.entries.collectAsState()
+	val recentLoading by recentlyWatchedViewModel.isLoading.collectAsState()
+	val recentError by recentlyWatchedViewModel.error.collectAsState()
+	val recentVisible by recentlyWatchedViewModel.dropdownVisible.collectAsState()
+	val recentEpisodes by recentlyWatchedViewModel.episodes.collectAsState()
+	val recentExpanded by recentlyWatchedViewModel.expandedSeries.collectAsState()
+	val playbackLauncher = koinInject<PlaybackLauncher>()
+
+	RecentlyWatchedDropdown(
+		visible = recentVisible,
+		onDismiss = recentlyWatchedViewModel::hideDropdown,
+		entries = recentEntries,
+		episodes = recentEpisodes,
+		expandedSeries = recentExpanded,
+		isLoading = recentLoading,
+		error = recentError,
+		onEntryClick = { entry ->
+			val item = entry.playItem
+
+			// A series opens; only a film has something to play at this level
+			if (item == null) {
+				recentlyWatchedViewModel.toggleSeries(entry)
+			} else if (activity != null) {
+				recentlyWatchedViewModel.hideDropdown()
+				playbackLauncher.launch(activity, listOf(item), entry.playPositionMs.toInt())
+			}
+		},
+		onEpisodeClick = { choice ->
+			if (activity != null) {
+				recentlyWatchedViewModel.hideDropdown()
+				playbackLauncher.launch(activity, listOf(choice.item), choice.positionMs.toInt())
+			}
+		},
+		api = api,
+	)
+
 	// Latest media dropdown
 	LatestMediaDropdown(
 		visible = latestMediaDropdownVisible,
@@ -206,6 +247,17 @@ private fun MainToolbar(
 						Icon(
 							imageVector = ImageVector.vectorResource(R.drawable.ic_time),
 							contentDescription = "Latest Media",
+						)
+					}
+
+					// Continue watching, sitting next to latest media as its counterpart: what
+					// arrived, and what you were part-way through
+					IconButton(
+						onClick = { recentlyWatchedViewModel.toggleDropdown() },
+					) {
+						Icon(
+							imageVector = ImageVector.vectorResource(R.drawable.ic_next_up),
+							contentDescription = "Continue Watching",
 						)
 					}
 

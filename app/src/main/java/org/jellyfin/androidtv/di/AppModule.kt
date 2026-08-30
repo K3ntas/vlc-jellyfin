@@ -52,6 +52,7 @@ import org.jellyfin.androidtv.ui.search.SearchRepository
 import org.jellyfin.androidtv.ui.search.SearchRepositoryImpl
 import org.jellyfin.androidtv.ui.search.SearchViewModel
 import org.jellyfin.androidtv.ui.shared.toolbar.LatestMediaViewModel
+import org.jellyfin.androidtv.ui.shared.toolbar.RecentlyWatchedViewModel
 import org.jellyfin.androidtv.ui.shared.toolbar.ToolbarSearchViewModel
 import org.jellyfin.androidtv.ui.settings.compat.SettingsViewModel
 import org.jellyfin.androidtv.ui.startup.ServerAddViewModel
@@ -198,6 +199,7 @@ val appModule = module {
 	viewModel { SearchViewModel(get()) }
 	viewModel { ToolbarSearchViewModel(get()) }
 	viewModel { LatestMediaViewModel(get()) }
+	viewModel { RecentlyWatchedViewModel(get()) }
 	viewModel { DreamViewModel(get(), get(), get(), get(), get()) }
 	viewModel { SettingsViewModel() }
 	viewModel { ProfileViewModel(get()) }
