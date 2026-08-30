@@ -20,6 +20,12 @@ open class CustomListRowPresenter @JvmOverloads constructor(
 	override fun onBindRowViewHolder(holder: RowPresenter.ViewHolder, item: Any) {
 		super.onBindRowViewHolder(holder, item)
 
+		// Rows are recycled, so only fit one when this row does not already carry ours
+		val grid = (holder as? ViewHolder)?.gridView
+		if (grid != null && grid.itemAnimator !is CardArrivalItemAnimator) {
+			grid.itemAnimator = CardArrivalItemAnimator()
+		}
+
 		val view = holder.view?.parent as? View ?: return
 		if (topPadding != null) view.setPadding(view.paddingLeft, topPadding, view.paddingRight, view.paddingBottom)
 

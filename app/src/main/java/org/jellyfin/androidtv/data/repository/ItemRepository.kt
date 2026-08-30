@@ -44,6 +44,8 @@ object ItemRepository {
 	val cardItemFields = setOf(
 		ItemFields.CHANNEL_INFO,
 		ItemFields.CHILD_COUNT,
+		// One timestamp per card, so a recent addition can be marked as new on the artwork
+		ItemFields.DATE_CREATED,
 		ItemFields.CUMULATIVE_RUN_TIME_TICKS,
 		ItemFields.ITEM_COUNTS,
 		ItemFields.MEDIA_SOURCES,

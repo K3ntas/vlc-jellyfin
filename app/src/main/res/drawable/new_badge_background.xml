@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    Pill behind the "NEW" marker on recently added artwork. Deliberately solid rather than
+    translucent: it sits on unpredictable poster art and has to stay readable over any of it.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <solid android:color="#E50914" />
+
+    <corners
+        android:bottomRightRadius="4dp"
+        android:topLeftRadius="4dp"
+        android:topRightRadius="4dp"
+        android:bottomLeftRadius="4dp" />
+
+</shape>

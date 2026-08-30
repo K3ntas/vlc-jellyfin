@@ -30,10 +30,12 @@ import org.jellyfin.androidtv.util.apiclient.JellyfinImage;
 import org.jellyfin.androidtv.util.apiclient.JellyfinImageKt;
 import org.jellyfin.sdk.model.api.BaseItemDto;
 import org.jellyfin.sdk.model.api.BaseItemKind;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 import org.jellyfin.sdk.model.api.UserItemDataDto;
 import org.koin.java.KoinJavaComponent;
 
-import java.time.LocalDateTime;
 import java.util.Locale;
 
 import kotlin.Lazy;
@@ -338,6 +340,23 @@ public class CardPresenter extends Presenter {
         return new ViewHolder(cardView);
     }
 
+    /** How long a new arrival keeps its badge. */
+    private static final Duration NEW_BADGE_WINDOW = Duration.ofDays(3);
+
+    /**
+     * Whether this item was added to the library recently enough to still count as new.
+     *
+     * Guards against a date in the future as well: a server whose clock is ahead would otherwise
+     * mark half a library as new and never stop.
+     */
+    private static boolean isRecentlyAdded(BaseRowItem rowItem) {
+        BaseItemDto item = rowItem.getBaseItem();
+        if (item == null || item.getDateCreated() == null) return false;
+
+        Duration age = Duration.between(item.getDateCreated(), LocalDateTime.now());
+        return !age.isNegative() && age.compareTo(NEW_BADGE_WINDOW) < 0;
+    }
+
     @Override
     public void onBindViewHolder(Presenter.ViewHolder viewHolder, Object item) {
         if (!(item instanceof BaseRowItem)) {
@@ -351,6 +370,7 @@ public class CardPresenter extends Presenter {
         // Nothing is written under the artwork: the poster carries the title, and the line beneath
         // it was left showing bare metadata like "R" or a release string once the name had gone.
         holder.mCardView.hideInfoArea();
+        holder.mCardView.setNewBadgeVisible(isRecentlyAdded(rowItem));
         if (ImageType.POSTER.equals(mImageType)) {
             holder.mCardView.setOverlayInfo(rowItem);
         }

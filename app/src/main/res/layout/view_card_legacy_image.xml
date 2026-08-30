@@ -51,6 +51,29 @@
             android:layout_alignBottom="@id/main_image"
             android:visibility="gone" />
 
+        <!-- Marks artwork added in the last few days. Sits bottom-left, clear of the rating
+             badge top-left and the episode count top-right. -->
+        <TextView
+            android:id="@+id/newBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/main_image"
+            android:layout_alignBottom="@id/main_image"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/new_badge_background"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:paddingStart="5dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="5dp"
+            android:paddingBottom="2dp"
+            android:text="@string/lbl_new_badge"
+            android:textColor="@color/white"
+            android:textSize="9sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <!-- Trailer furniture. All of it sits above the video surface and below the focus frame,
              and all of it is hidden until a preview actually starts. -->
         <View

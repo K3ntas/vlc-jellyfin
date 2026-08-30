@@ -627,6 +627,7 @@
     </plurals>
 
     <!-- Ratings plugin integration -->
+    <string name="lbl_new_badge">NEW</string>
     <string name="lbl_rate">Rate</string>
     <string name="msg_rating_submitted">Rating submitted</string>
     <string name="msg_rating_deleted">Rating removed</string>

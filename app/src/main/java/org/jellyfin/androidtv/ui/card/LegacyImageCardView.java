@@ -599,6 +599,16 @@ public class LegacyImageCardView extends BaseCardView {
         binding.nameOverlay.setVisibility(GONE);
     }
 
+    /**
+     * Marks artwork the server only recently learned about.
+     *
+     * Recency is judged on when the item was added to the library rather than when it was
+     * released, since that is what makes it new to the person looking at the shelf.
+     */
+    public void setNewBadgeVisible(boolean visible) {
+        binding.newBadge.setVisibility(visible ? VISIBLE : GONE);
+    }
+
     public void setOverlayInfo(BaseRowItem item) {
         // Kept regardless of card type so the trailer preview knows what it is showing
         mPreviewItem = item instanceof BaseItemDtoBaseRowItem ? item.getBaseItem() : null;
