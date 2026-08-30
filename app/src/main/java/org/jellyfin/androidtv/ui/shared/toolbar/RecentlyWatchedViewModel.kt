@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.androidtv.data.repository.ItemRepository
+import org.jellyfin.androidtv.util.EpisodeNaming
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
@@ -291,20 +292,9 @@ class RecentlyWatchedViewModel(
 			.firstOrNull { it.id != current.id }
 	}
 
-	private fun labelFor(item: BaseItemDto): String = listOf(episodeCode(item), item.name.orEmpty())
-		.filter { it.isNotEmpty() }
-		.joinToString("  ")
+	private fun labelFor(item: BaseItemDto): String = EpisodeNaming.label(item)
 
-	private fun episodeCode(item: BaseItemDto): String {
-		val season = item.parentIndexNumber
-		val episode = item.indexNumber
-
-		return when {
-			season != null && episode != null -> "S%02dE%02d".format(season, episode)
-			episode != null -> "E%02d".format(episode)
-			else -> ""
-		}
-	}
+	private fun episodeCode(item: BaseItemDto): String = EpisodeNaming.code(item)
 
 	/** "Resume 23:14" while part-way through, otherwise how long ago it was finished. */
 	private fun progressLabel(item: BaseItemDto): String {
