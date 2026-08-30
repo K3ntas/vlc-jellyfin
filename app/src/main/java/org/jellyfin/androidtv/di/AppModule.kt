@@ -32,6 +32,7 @@ import org.jellyfin.androidtv.data.repository.ItemMutationRepository
 import org.jellyfin.androidtv.data.repository.ItemMutationRepositoryImpl
 import org.jellyfin.androidtv.data.repository.NotificationsRepository
 import org.jellyfin.androidtv.data.repository.NotificationsRepositoryImpl
+import org.jellyfin.androidtv.data.repository.RowCache
 import org.jellyfin.androidtv.data.repository.UserViewsRepository
 import org.jellyfin.androidtv.data.repository.UserViewsRepositoryImpl
 import org.jellyfin.androidtv.data.service.BackgroundService
@@ -160,6 +161,7 @@ val appModule = module {
 
 	// Non API related
 	single { DataRefreshService() }
+	single { RowCache(androidContext()) }
 	single { PlaybackControllerContainer() }
 	single { InteractionTrackerViewModel(get(), get()) }
 

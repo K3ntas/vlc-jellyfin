@@ -12,6 +12,7 @@ import org.jellyfin.androidtv.constant.LiveTvOption
 import org.jellyfin.androidtv.data.querying.GetAdditionalPartsRequest
 import org.jellyfin.androidtv.data.querying.GetSpecialsRequest
 import org.jellyfin.androidtv.data.querying.GetTrailersRequest
+import org.jellyfin.androidtv.data.repository.RowCache
 import org.jellyfin.androidtv.data.repository.UserViewsRepository
 import org.jellyfin.androidtv.ui.GridButton
 import org.jellyfin.androidtv.ui.browsing.BrowseGridFragment.SortOption
@@ -40,8 +41,76 @@ import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSeasonsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import org.jellyfin.sdk.model.api.request.GetUpcomingEpisodesRequest
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.koin.java.KoinJavaComponent
 import timber.log.Timber
 import kotlin.math.min
+
+private val rowCache: RowCache by lazy { KoinJavaComponent.get(RowCache::class.java) }
+
+/** Keyed by user as well as query, so two accounts never see each other's rows. */
+private fun cacheKey(api: ApiClient, query: Any): String = "${'$'}{api.userId}|${'$'}query"
+
+/**
+ * Draws [key]'s last known contents straight away, then reconciles them with the server's answer.
+ *
+ * The row is announced as finished as soon as the cached copy is in place. Waiting for the network
+ * to say so is exactly the delay this exists to remove, and the listeners all cope with hearing it
+ * again when the fresh copy lands.
+ *
+ * Differences are applied as individual inserts and removals rather than as a wholesale replace,
+ * so the row animates: arriving cards push the line along and open a space for themselves, which
+ * is both nicer to watch and honest about what changed. A row whose contents did not change is
+ * never touched at all.
+ */
+private suspend fun ItemRowAdapter.retrieveCached(
+	key: String,
+	fetch: suspend () -> List<BaseItemDto>,
+	transform: (BaseItemDto) -> BaseRowItem?,
+): List<BaseItemDto> {
+	val cached = rowCache.read(key)
+
+	if (!cached.isNullOrEmpty()) {
+		setItems(items = cached, transform = { item, _ -> transform(item) })
+		notifyRetrieveFinished()
+	}
+
+	val fresh = fetch()
+
+	when {
+		fresh == cached -> Unit
+		cached.isNullOrEmpty() -> setItems(items = fresh, transform = { item, _ -> transform(item) })
+		else -> reconcile(fresh, transform)
+	}
+
+	rowCache.write(key, fresh)
+
+	return fresh
+}
+
+/**
+ * Brings the row in line with [fresh], moving only what actually differs.
+ *
+ * The adapter's own diff does the work, told to match cards by item id rather than by equality:
+ * a card whose metadata changed then keeps its place and is merely rebound, while a genuinely new
+ * arrival is reported as an insert. That is what makes the row open a space and slide the
+ * existing cards along instead of blinking wholesale.
+ */
+private fun ItemRowAdapter.reconcile(
+	fresh: List<BaseItemDto>,
+	transform: (BaseItemDto) -> BaseRowItem?,
+) {
+	val rows = fresh.mapNotNull(transform)
+
+	replaceAll(
+		items = rows,
+		areItemsTheSame = { old, new -> rowItemId(old) != null && rowItemId(old) == rowItemId(new) },
+	)
+
+	itemsLoaded = rows.size
+}
+
+private fun rowItemId(item: Any?) = (item as? BaseItemDtoBaseRowItem)?.baseItem?.id
 
 fun <T : Any> ItemRowAdapter.setItems(
 	items: Collection<T>,
@@ -74,22 +143,13 @@ fun <T : Any> ItemRowAdapter.setItems(
 fun ItemRowAdapter.retrieveResumeItems(api: ApiClient, query: GetResumeItemsRequest) {
 	ProcessLifecycleOwner.get().lifecycleScope.launch {
 		runCatching {
-			val response = withContext(Dispatchers.IO) {
-				api.itemsApi.getResumeItems(query).content
-			}
-
-			setItems(
-				items = response.items,
-				transform = { item, _ ->
-					BaseItemDtoBaseRowItem(
-						item,
-						preferParentThumb,
-						isStaticHeight
-					)
-				}
+			val items = retrieveCached(
+				key = cacheKey(api, query),
+				fetch = { withContext(Dispatchers.IO) { api.itemsApi.getResumeItems(query).content.items } },
+				transform = { item -> BaseItemDtoBaseRowItem(item, preferParentThumb, isStaticHeight) },
 			)
 
-			if (response.items.isEmpty()) removeRow()
+			if (items.isEmpty()) removeRow()
 		}.fold(
 			onSuccess = { notifyRetrieveFinished() },
 			onFailure = { error -> notifyRetrieveFinished(error as? Exception) }
@@ -159,13 +219,10 @@ fun ItemRowAdapter.retrieveNextUpItems(api: ApiClient, query: GetNextUpRequest) 
 fun ItemRowAdapter.retrieveLatestMedia(api: ApiClient, query: GetLatestMediaRequest) {
 	ProcessLifecycleOwner.get().lifecycleScope.launch {
 		runCatching {
-			val response = withContext(Dispatchers.IO) {
-				api.userLibraryApi.getLatestMedia(query).content
-			}
-
-			setItems(
-				items = response,
-				transform = { item, _ ->
+			val items = retrieveCached(
+				key = cacheKey(api, query),
+				fetch = { withContext(Dispatchers.IO) { api.userLibraryApi.getLatestMedia(query).content } },
+				transform = { item ->
 					BaseItemDtoBaseRowItem(
 						item,
 						preferParentThumb,
@@ -173,10 +230,10 @@ fun ItemRowAdapter.retrieveLatestMedia(api: ApiClient, query: GetLatestMediaRequ
 						BaseRowItemSelectAction.ShowDetails,
 						preferParentThumb,
 					)
-				}
+				},
 			)
 
-			if (response.isEmpty()) removeRow()
+			if (items.isEmpty()) removeRow()
 		}.fold(
 			onSuccess = { notifyRetrieveFinished() },
 			onFailure = { error -> notifyRetrieveFinished(error as? Exception) }
@@ -566,26 +623,31 @@ fun ItemRowAdapter.retrieveItems(
 ) {
 	ProcessLifecycleOwner.get().lifecycleScope.launch {
 		runCatching {
-			val response = withContext(Dispatchers.IO) {
-				api.itemsApi.getItems(
-					query.copy(
-						startIndex = startIndex,
-						limit = batchSize,
-					)
-				).content
-			}
+			val paged = query.copy(startIndex = startIndex, limit = batchSize)
 
-			totalItems = response.totalRecordCount
-			setItems(
-				items = response.items,
-				transform = { item, _ ->
-					BaseItemDtoBaseRowItem(
-						item,
-						preferParentThumb,
-						isStaticHeight,
-					)
-				},
-			)
+			// Only the first page is cached. Later pages are asked for as the user scrolls into
+			// them, by which point the row is already on screen and there is no wait to remove.
+			if (startIndex == 0) {
+				retrieveCached(
+					key = cacheKey(api, paged),
+					fetch = {
+						withContext(Dispatchers.IO) {
+							api.itemsApi.getItems(paged).content.also { totalItems = it.totalRecordCount }
+						}.items
+					},
+					transform = { item -> BaseItemDtoBaseRowItem(item, preferParentThumb, isStaticHeight) },
+				)
+			} else {
+				val response = withContext(Dispatchers.IO) { api.itemsApi.getItems(paged).content }
+
+				totalItems = response.totalRecordCount
+				setItems(
+					items = response.items,
+					transform = { item, _ ->
+						BaseItemDtoBaseRowItem(item, preferParentThumb, isStaticHeight)
+					},
+				)
+			}
 
 			if (itemsLoaded == 0) removeRow()
 		}.fold(
