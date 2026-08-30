@@ -80,6 +80,12 @@ fun RecentlyWatchedDropdown(
 
 	val firstItemFocusRequester = remember { FocusRequester() }
 
+	// VLC keeps a native instance and a hardware decoder alive once created, and nothing else ever
+	// tears this one down. Released with the dropdown so it is only held while it can be seen.
+	DisposableEffect(Unit) {
+		onDispose { EpisodePreviewPlayer.release() }
+	}
+
 	// Dwelling on an episode row raises a preview of it. Held here rather than in the view model
 	// because it is pure presentation - nothing outside this popup cares which row is hovered.
 	var focusedEpisode by remember { mutableStateOf<EpisodeChoice?>(null) }

@@ -12,6 +12,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.UUID
 import timber.log.Timber
@@ -24,6 +25,15 @@ import java.util.concurrent.ConcurrentHashMap
  * The plugin provides custom community ratings (1-10 scale) stored on the Jellyfin server.
  * API endpoints: /Ratings/Items/{itemId}/...
  */
+/**
+ * Reads the response body and closes it.
+ *
+ * OkHttp holds the connection until the body is closed, and several of these calls only ever
+ * looked at the status code - so a submitted rating leaked its connection until a finalizer
+ * happened to catch it. That is what "A resource failed to call close" in the log was.
+ */
+private fun Response.readBody(): String? = use { it.body?.string() }
+
 class RatingsRepository(
     private val api: ApiClient,
     private val okHttpClient: OkHttpClient,
@@ -65,8 +75,10 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
-                    val body = response.body?.string()
+                    val body = bodyText
                     Timber.d("Rating stats response body: $body")
                     if (!body.isNullOrBlank()) {
                         val stats = json.decodeFromString<RatingStats>(body)
@@ -120,6 +132,8 @@ class RatingsRepository(
                     .build()
 
                 val response = okHttpClient.newCall(request).execute()
+
+                val bodyText = response.readBody()
                 Timber.i("RATING_API: Response code=${response.code}")
 
                 if (response.isSuccessful) {
@@ -163,6 +177,8 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
                     statsCache.remove(itemIdStr)
                     Timber.d("Review updated successfully")
@@ -203,15 +219,17 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
-                    val body = response.body?.string()
+                    val body = bodyText
                     if (body != null) {
                         val likeResponse = json.decodeFromString<LikeResponse>(body)
                         Timber.d("Like response: $likeResponse")
                         return@withContext likeResponse
                     }
                 } else {
-                    Timber.e("Failed to like review: ${response.code} - ${response.body?.string()}")
+                    Timber.e("Failed to like review: ${response.code} - $bodyText")
                 }
             } catch (e: IOException) {
                 Timber.e(e, "Network error liking review")
@@ -239,6 +257,8 @@ class RatingsRepository(
                     .build()
 
                 val response = okHttpClient.newCall(request).execute()
+
+                val bodyText = response.readBody()
 
                 if (response.isSuccessful) {
                     // Invalidate cache for this item
@@ -273,8 +293,10 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
-                    val body = response.body?.string()
+                    val body = bodyText
                     Timber.i("RATING_API: DetailedRatings response body: $body")
                     if (body != null) {
                         val result = json.decodeFromString<List<UserRatingDetail>>(body)
@@ -310,8 +332,10 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
-                    val body = response.body?.string()
+                    val body = bodyText
                     if (body != null) {
                         return@withContext json.decodeFromString<List<UserRating>>(body)
                     }
@@ -370,8 +394,10 @@ class RatingsRepository(
 
                 val response = okHttpClient.newCall(request).execute()
 
+                val bodyText = response.readBody()
+
                 if (response.isSuccessful) {
-                    val body = response.body?.string()
+                    val body = bodyText
                     if (body != null) {
                         return@withContext json.decodeFromString<List<ReviewComment>>(body)
                     }
@@ -406,6 +432,8 @@ class RatingsRepository(
                     .build()
 
                 val response = okHttpClient.newCall(request).execute()
+
+                val bodyText = response.readBody()
 
                 if (response.isSuccessful) {
                     Timber.d("Comment added successfully")

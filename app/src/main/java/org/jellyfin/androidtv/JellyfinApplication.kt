@@ -6,6 +6,9 @@ import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,6 +18,8 @@ import org.jellyfin.androidtv.data.eventhandling.SocketHandler
 import org.jellyfin.androidtv.data.repository.NotificationsRepository
 import org.jellyfin.androidtv.integration.LeanbackChannelWorker
 import org.jellyfin.androidtv.telemetry.TelemetryService
+import org.jellyfin.androidtv.ui.card.TrailerPreviewPlayer
+import org.jellyfin.androidtv.ui.shared.toolbar.EpisodePreviewPlayer
 import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
@@ -28,6 +33,16 @@ class JellyfinApplication : Application() {
 
 		val notificationsRepository by inject<NotificationsRepository>()
 		notificationsRepository.addDefaultNotifications()
+
+		// Both preview players keep a decoder and native memory for as long as they exist, and
+		// nothing else ever tears them down - once a preview had run, the app sat on a hardware
+		// decoder for the rest of its life, including in the background where another app wants it.
+		ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+			override fun onStop(owner: LifecycleOwner) {
+				TrailerPreviewPlayer.release()
+				EpisodePreviewPlayer.release()
+			}
+		})
 	}
 
 	/**
