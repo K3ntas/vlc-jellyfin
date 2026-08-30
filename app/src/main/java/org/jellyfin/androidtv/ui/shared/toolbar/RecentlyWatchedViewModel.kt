@@ -11,11 +11,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.androidtv.data.repository.ItemRepository
 import org.jellyfin.androidtv.util.EpisodeNaming
+import org.jellyfin.androidtv.util.apiclient.getUrl
+import org.jellyfin.androidtv.util.apiclient.itemImages
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFilter
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
@@ -32,8 +36,10 @@ data class RecentlyWatchedEntry(
 	val id: UUID,
 	val title: String,
 	val subtitle: String,
-	/** The item whose artwork represents this line - the episode itself for a series. */
-	val artworkItem: BaseItemDto,
+	/** Poster for the line: the show's own, not a still from the episode it was left on. */
+	val artworkUrl: String?,
+	/** The episode a series was left on, kept for the rows the line opens into. */
+	val lastWatchedEpisode: BaseItemDto?,
 	val isSeries: Boolean,
 	/** What plays when a film is pressed. Null for a series, which expands instead. */
 	val playItem: BaseItemDto?,
@@ -121,6 +127,15 @@ class RecentlyWatchedViewModel(
 		if (_episodes.value[entry.id] == null) loadEpisodes(entry)
 	}
 
+	/**
+	 * Closes an open series when focus lands on a different line, so moving down the list does not
+	 * leave episodes stranded under a show that is no longer being looked at.
+	 */
+	fun onEntryFocused(entry: RecentlyWatchedEntry) {
+		val expanded = _expandedSeries.value ?: return
+		if (expanded != entry.id) _expandedSeries.value = null
+	}
+
 	fun load() {
 		viewModelScope.launch {
 			_isLoading.value = true
@@ -190,13 +205,14 @@ class RecentlyWatchedViewModel(
 			if (item.type == BaseItemKind.EPISODE && seriesId != null) {
 				if (!seen.add(seriesId)) continue
 
+				// The line stands for the show, not for the episode: no episode number and no
+				// resume time, because pressing it opens a choice rather than playing anything.
 				entries += RecentlyWatchedEntry(
 					id = seriesId,
 					title = item.seriesName ?: item.name.orEmpty(),
-					subtitle = listOf(episodeCode(item), progressLabel(item))
-						.filter { it.isNotEmpty() }
-						.joinToString("  ·  "),
-					artworkItem = item,
+					subtitle = lastWatchedLabel(item),
+					artworkUrl = artworkFor(item, seriesId),
+					lastWatchedEpisode = item,
 					isSeries = true,
 					playItem = null,
 					playPositionMs = positionMs(item),
@@ -208,7 +224,8 @@ class RecentlyWatchedViewModel(
 					id = item.id,
 					title = item.name.orEmpty(),
 					subtitle = progressLabel(item),
-					artworkItem = item,
+					artworkUrl = artworkFor(item, null),
+					lastWatchedEpisode = null,
 					isSeries = false,
 					playItem = item,
 					playPositionMs = positionMs(item),
@@ -222,7 +239,7 @@ class RecentlyWatchedViewModel(
 	}
 
 	private fun loadEpisodes(entry: RecentlyWatchedEntry) {
-		val current = entry.artworkItem
+		val current = entry.lastWatchedEpisode ?: return
 
 		// The episode already in hand is shown straight away; only next-up has to be fetched
 		_episodes.value += entry.id to SeriesEpisodes(
@@ -295,6 +312,35 @@ class RecentlyWatchedViewModel(
 	private fun labelFor(item: BaseItemDto): String = EpisodeNaming.label(item)
 
 	private fun episodeCode(item: BaseItemDto): String = EpisodeNaming.code(item)
+
+	/**
+	 * The show's own poster, falling back to the episode's still only when a series has no image
+	 * of its own. An episode still is a frame of the dark middle of something and reads as an
+	 * episode row; the poster is what makes the line say "this show".
+	 */
+	private fun artworkFor(item: BaseItemDto, seriesId: UUID?): String? {
+		if (seriesId != null) {
+			val tag = item.seriesPrimaryImageTag
+
+			if (tag != null) return runCatching {
+				api.imageApi.getItemImageUrl(
+					itemId = seriesId,
+					imageType = ImageType.PRIMARY,
+					tag = tag,
+					maxHeight = 160,
+				)
+			}.getOrNull()
+		}
+
+		return item.itemImages[ImageType.PRIMARY]?.getUrl(api, maxHeight = 160)
+	}
+
+	/** Deliberately vague: which episode and how far in belongs to the rows, not to the show. */
+	private fun lastWatchedLabel(item: BaseItemDto): String {
+		val ago = timeAgo(item.userData?.lastPlayedDate)
+
+		return if (ago.isEmpty()) "Last watched" else "Last watched $ago"
+	}
 
 	/** "Resume 23:14" while part-way through, otherwise how long ago it was finished. */
 	private fun progressLabel(item: BaseItemDto): String {

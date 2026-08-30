@@ -160,6 +160,7 @@ private fun MainToolbar(
 				playbackLauncher.launch(activity, listOf(item), entry.playPositionMs.toInt())
 			}
 		},
+		onEntryFocused = recentlyWatchedViewModel::onEntryFocused,
 		onEpisodeClick = { choice ->
 			if (activity != null) {
 				recentlyWatchedViewModel.hideDropdown()

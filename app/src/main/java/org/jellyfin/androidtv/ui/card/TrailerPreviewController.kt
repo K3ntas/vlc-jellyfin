@@ -87,7 +87,14 @@ class TrailerPreviewController @JvmOverloads constructor(
 		val local = runCatching { api.userLibraryApi.getLocalTrailers(id).content }.getOrNull()
 
 		local?.firstOrNull()?.id?.let { trailerId ->
-			return@withContext api.createUrl("/Videos/$trailerId/stream", mapOf("static" to true))
+			// queryParameters, not path parameters - the latter drops the query string entirely
+			return@withContext api.createUrl(
+				"/Videos/$trailerId/stream",
+				queryParameters = mapOf(
+					"static" to true,
+					"api_key" to api.accessToken.orEmpty(),
+				),
+			)
 		}
 
 		// Browse rows are fetched with the reduced card field set, which carries no trailer data,

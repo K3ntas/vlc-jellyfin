@@ -179,6 +179,10 @@ dependencies {
 	// Resolves youtube trailer urls to direct streams for card previews
 	implementation(libs.newpipe.extractor)
 
+	// Episode previews decode with VLC rather than ExoPlayer, so they play the same files the
+	// app was built to play. The playback module keeps this to itself, hence the second entry.
+	implementation(libs.vlc.android)
+
 	// Markdown
 	implementation(libs.bundles.markwon)
 

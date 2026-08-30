@@ -21,8 +21,11 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,9 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import android.view.TextureView
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import org.jellyfin.androidtv.ui.base.Text
 import org.jellyfin.androidtv.util.apiclient.getUrl
 import org.jellyfin.androidtv.util.apiclient.itemImages
@@ -65,12 +72,26 @@ fun RecentlyWatchedDropdown(
 	isLoading: Boolean,
 	error: String?,
 	onEntryClick: (RecentlyWatchedEntry) -> Unit,
+	onEntryFocused: (RecentlyWatchedEntry) -> Unit,
 	onEpisodeClick: (EpisodeChoice) -> Unit,
 	api: ApiClient,
 ) {
 	if (!visible) return
 
 	val firstItemFocusRequester = remember { FocusRequester() }
+
+	// Dwelling on an episode row raises a preview of it. Held here rather than in the view model
+	// because it is pure presentation - nothing outside this popup cares which row is hovered.
+	var focusedEpisode by remember { mutableStateOf<EpisodeChoice?>(null) }
+	var previewEpisode by remember { mutableStateOf<EpisodeChoice?>(null) }
+
+    LaunchedEffect(focusedEpisode) {
+		previewEpisode = null
+
+		val choice = focusedEpisode ?: return@LaunchedEffect
+		delay(PREVIEW_DWELL_MS)
+		previewEpisode = choice
+	}
 
 	LaunchedEffect(visible, entries) {
 		if (visible && entries.isNotEmpty()) {
@@ -123,8 +144,11 @@ fun RecentlyWatchedDropdown(
 								EntryRow(
 									entry = entry,
 									expanded = expanded,
-									api = api,
 									onClick = { onEntryClick(entry) },
+									onFocused = {
+										focusedEpisode = null
+										onEntryFocused(entry)
+									},
 									focusRequester = if (index == 0) firstItemFocusRequester else null,
 								)
 							}
@@ -134,13 +158,47 @@ fun RecentlyWatchedDropdown(
 
 								if (shown?.current != null) {
 									item(key = "${entry.id}-current") {
-										EpisodeRow(shown.current, onClick = { onEpisodeClick(shown.current) })
+										EpisodeRow(
+											choice = shown.current,
+											onClick = { onEpisodeClick(shown.current) },
+											onFocusChanged = { focused ->
+												// Only clear if this row is still the one recorded: the row losing
+												// focus reports after the row gaining it, and would otherwise
+												// wipe the target that was just set
+												if (focused) focusedEpisode = shown.current
+												else if (focusedEpisode == shown.current) focusedEpisode = null
+											},
+										)
+									}
+
+									if (previewEpisode == shown.current) {
+										item(key = "${entry.id}-current-preview") {
+											EpisodePreviewPanel(shown.current, api)
+										}
 									}
 								}
 
 								when {
-									shown?.next != null -> item(key = "${entry.id}-next") {
-										EpisodeRow(shown.next, onClick = { onEpisodeClick(shown.next) })
+									shown?.next != null -> {
+										item(key = "${entry.id}-next") {
+											EpisodeRow(
+												choice = shown.next,
+												onClick = { onEpisodeClick(shown.next) },
+												onFocusChanged = { focused ->
+													// Only clear if this row is still the one recorded: the row losing
+													// focus reports after the row gaining it, and would otherwise
+													// wipe the target that was just set
+													if (focused) focusedEpisode = shown.next
+													else if (focusedEpisode == shown.next) focusedEpisode = null
+												},
+											)
+										}
+
+										if (previewEpisode == shown.next) {
+											item(key = "${entry.id}-next-preview") {
+												EpisodePreviewPanel(shown.next, api)
+											}
+										}
 									}
 
 									shown?.loading == true -> item(key = "${entry.id}-loading") {
@@ -177,20 +235,17 @@ private fun Message(text: String, color: Color) {
 private fun EntryRow(
 	entry: RecentlyWatchedEntry,
 	expanded: Boolean,
-	api: ApiClient,
 	onClick: () -> Unit,
+	onFocused: () -> Unit,
 	focusRequester: FocusRequester?,
 ) {
-	val imageUrl = remember(entry.artworkItem) {
-		entry.artworkItem.itemImages[ImageType.PRIMARY]?.getUrl(api, maxHeight = 96)
-	}
-
 	FocusableRow(
 		onClick = onClick,
 		focusRequester = focusRequester,
+		onFocusChanged = { if (it) onFocused() },
 	) { focused ->
 		AsyncImage(
-			model = imageUrl,
+			model = entry.artworkUrl,
 			contentDescription = null,
 			modifier = Modifier
 				.size(width = 40.dp, height = 60.dp)
@@ -238,12 +293,14 @@ private fun EntryRow(
 private fun EpisodeRow(
 	choice: EpisodeChoice,
 	onClick: () -> Unit,
+	onFocusChanged: (Boolean) -> Unit,
 ) {
 	FocusableRow(
 		onClick = onClick,
 		focusRequester = null,
 		startPadding = 32.dp,
 		background = Color(0xFF1F1F1F),
+		onFocusChanged = onFocusChanged,
 	) { _ ->
 		Column(modifier = Modifier.weight(1f)) {
 			Text(
@@ -286,10 +343,13 @@ private fun FocusableRow(
 	focusRequester: FocusRequester?,
 	startPadding: androidx.compose.ui.unit.Dp = 0.dp,
 	background: Color = Color(0xFF252525),
+	onFocusChanged: (Boolean) -> Unit = {},
 	content: @Composable androidx.compose.foundation.layout.RowScope.(focused: Boolean) -> Unit,
 ) {
 	val interactionSource = remember { MutableInteractionSource() }
 	val isFocused by interactionSource.collectIsFocusedAsState()
+
+	LaunchedEffect(isFocused) { onFocusChanged(isFocused) }
 
 	Row(
 		modifier = Modifier
@@ -326,5 +386,53 @@ private fun FocusableRow(
 		verticalAlignment = Alignment.CenterVertically,
 	) {
 		content(isFocused)
+	}
+}
+
+/** How long a row must be held before it is worth spending a decoder on a preview. */
+private const val PREVIEW_DWELL_MS = 2000L
+
+/**
+ * The episode itself, previewed in place.
+ *
+ * Opens between the two rows and pushes them apart rather than floating beside the list, so the
+ * preview belongs to the row it came from and nothing is covered up.
+ */
+@Composable
+private fun EpisodePreviewPanel(
+	choice: EpisodeChoice,
+	api: ApiClient,
+) {
+	val context = LocalContext.current
+
+	val url = remember(choice.item.id) {
+		// queryParameters, not the second positional argument - that one is path parameters, and
+		// putting these there silently produces a url with no query string and no credentials
+		api.createUrl(
+			"/Videos/${choice.item.id}/stream",
+			queryParameters = mapOf(
+				"static" to true,
+				// VLC fetches this itself and carries none of the client's auth headers
+				"api_key" to api.accessToken.orEmpty(),
+			),
+		)
+	}
+
+	val surface = remember { TextureView(context) }
+
+	Box(
+		modifier = Modifier
+			.fillMaxWidth()
+			.padding(start = 32.dp, top = 4.dp, bottom = 4.dp)
+			.clip(RoundedCornerShape(8.dp))
+			.background(Color.Black)
+			.height(150.dp)
+	) {
+		AndroidView(factory = { surface }, modifier = Modifier.fillMaxWidth().height(150.dp))
+	}
+
+	DisposableEffect(choice.item.id) {
+		EpisodePreviewPlayer.play(context, choice, surface, url, choice.positionMs)
+		onDispose { EpisodePreviewPlayer.stop(choice) }
 	}
 }
