@@ -3,7 +3,10 @@ package org.jellyfin.androidtv.ui.social
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -22,6 +26,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 /**
  * Makes a card reachable with the D-pad and shows where focus is.
@@ -30,6 +35,7 @@ import androidx.compose.ui.unit.dp
  * screen reads as unusable even though it has content. The border colour follows the profile's own
  * accent so focus matches whatever theme the user picked.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Modifier.profileFocusable(
 	accent: Color,
@@ -39,6 +45,12 @@ fun Modifier.profileFocusable(
 	var focused by remember { mutableStateOf(false) }
 	val interactionSource = remember { MutableInteractionSource() }
 	val shape = remember(cornerRadius) { RoundedCornerShape(cornerRadius.dp) }
+
+	// Focus moving down the page does not scroll the page on its own here, so the list stayed
+	// pinned to the top while the highlight walked off the bottom of it. Each card asks to be
+	// scrolled into view as it takes focus.
+	val bringIntoViewRequester = remember { BringIntoViewRequester() }
+	val scope = rememberCoroutineScope()
 
 	// A focused card lifts and glows rather than only gaining an outline. Spring rather than a
 	// fixed duration so repeated D-pad presses feel continuous instead of queued.
@@ -62,7 +74,11 @@ fun Modifier.profileFocusable(
 			this.shape = shape
 			clip = false
 		}
-		.onFocusChanged { focused = it.isFocused }
+		.bringIntoViewRequester(bringIntoViewRequester)
+		.onFocusChanged { state ->
+			focused = state.isFocused
+			if (state.isFocused) scope.launch { bringIntoViewRequester.bringIntoView() }
+		}
 		.focusable(interactionSource = interactionSource)
 		.then(
 			if (onClick != null) {

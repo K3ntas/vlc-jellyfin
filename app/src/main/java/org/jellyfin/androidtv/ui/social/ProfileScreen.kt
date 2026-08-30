@@ -73,6 +73,9 @@ import java.util.UUID
  * The user's own colours from [ProfileStyle] are honoured; the parts of that style which are
  * purely CSS - shadows, font stacks, hover effects - have no equivalent here and are ignored.
  */
+/** Room for the content list once the header has been scrolled past. */
+private val CONTENT_HEIGHT = 620.dp
+
 @Composable
 fun ProfileScreen(userId: UUID? = null, modifier: Modifier = Modifier) {
 	val viewModel = koinViewModel<ProfileViewModel>()
@@ -84,10 +87,14 @@ fun ProfileScreen(userId: UUID? = null, modifier: Modifier = Modifier) {
 	val style = state.style
 	val background = style.backgroundColor.toColorOr(Color(0xFF1A1A2E))
 
+	// The page scrolls as a whole. The header alone is most of a screen, so with a fixed page the
+	// content below it had almost no height left: focus walked down into cards that were never
+	// brought on screen, and the page appeared stuck at the top.
 	Column(
 		modifier = modifier
 			.fillMaxSize()
 			.background(background)
+			.verticalScroll(rememberScrollState())
 	) {
 		if (state.loading) {
 			Text(
@@ -181,7 +188,13 @@ fun ProfileScreen(userId: UUID? = null, modifier: Modifier = Modifier) {
 			}
 		}
 
-		Row(modifier = Modifier.fillMaxSize()) {
+		// An explicit height rather than fillMaxSize: inside a scrolling column the available
+		// height is unbounded, and a lazy list needs a real one to measure against.
+		Row(
+			modifier = Modifier
+				.fillMaxWidth()
+				.height(CONTENT_HEIGHT)
+		) {
 			// The content list is the only unbounded part of the page, so it is the part that has to
 			// be lazy. A plain scrolling Column composed and measured every favourite row, every
 			// review and every user even when far off screen.
