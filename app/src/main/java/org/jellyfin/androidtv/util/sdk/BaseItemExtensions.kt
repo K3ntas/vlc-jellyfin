@@ -3,6 +3,8 @@ package org.jellyfin.androidtv.util.sdk
 import android.content.Context
 import org.jellyfin.androidtv.R
 import org.jellyfin.androidtv.data.model.ChapterItemInfo
+import org.jellyfin.androidtv.util.EpisodeNaming
+import org.jellyfin.androidtv.util.EpisodeNumbering
 import org.jellyfin.androidtv.util.TimeUtils
 import org.jellyfin.androidtv.util.getQuantityString
 import org.jellyfin.androidtv.util.getTimeFormatter
@@ -16,19 +18,25 @@ import org.jellyfin.sdk.model.api.PersonKind
 import java.time.LocalDateTime
 
 fun BaseItemDto.getSeasonEpisodeName(context: Context): String {
+	// An episode whose filename the server could not parse is left with no index at all, which
+	// showed here as a bare "S5". The numbers are usually still in the name, so they are read back
+	// out - this only fills gaps and never overrides what the server did work out.
+	val (season, episode) = when (type) {
+		BaseItemKind.EPISODE -> EpisodeNaming.numbering(this)
+		else -> EpisodeNumbering(parentIndexNumber, indexNumber)
+	}
+
 	val seasonNumber = when {
-		type == BaseItemKind.EPISODE
-			&& parentIndexNumber != null
-			&& parentIndexNumber != 0 ->
-			context.getString(R.string.lbl_season_number, parentIndexNumber)
+		type == BaseItemKind.EPISODE && season != null && season != 0 ->
+			context.getString(R.string.lbl_season_number, season)
 
 		else -> null
 	}
 
 	val episodeNumber = when {
 		type != BaseItemKind.EPISODE -> indexNumber?.toString()
-		parentIndexNumber == 0 -> context.getString(R.string.lbl_special)
-		else -> indexNumber?.let { start ->
+		season == 0 -> context.getString(R.string.lbl_special)
+		else -> episode?.let { start ->
 			indexNumberEnd?.let { end -> context.getString(R.string.lbl_episode_range, start, end) }
 				?: context.getString(R.string.lbl_episode_number, start)
 		}
@@ -43,9 +51,20 @@ fun BaseItemDto.getDisplayName(context: Context): String {
 		else -> ". "
 	}
 
-	return listOfNotNull(getSeasonEpisodeName(context), name)
-		.filter { it.isNotEmpty() }
-		.joinToString(nameSeparator)
+	// An unparsed episode is titled with its own filename. Once the numbers have been recovered
+	// that says nothing a viewer wants, so it is dropped rather than printed beside them.
+	val title = when (type) {
+		BaseItemKind.EPISODE -> EpisodeNaming.title(this)
+		else -> name
+	}
+
+	val parts = listOfNotNull(getSeasonEpisodeName(context), title).filter { it.isNotEmpty() }
+
+	return when {
+		parts.isNotEmpty() -> parts.joinToString(nameSeparator)
+		// Nothing recovered and nothing worth showing: the filename still beats a blank title
+		else -> name.orEmpty()
+	}
 }
 
 
@@ -95,16 +114,20 @@ fun BaseItemDto.getFullName(context: Context): String? = when (type) {
 	BaseItemKind.EPISODE -> buildList {
 		add(seriesName)
 
-		if (parentIndexNumber == 0) {
+		// Recovered from the filename where the server left no index, so this does not stop at
+		// the season and leave the episode unnamed
+		val (season, episode) = EpisodeNaming.numbering(this@getFullName)
+
+		if (season == 0) {
 			add(context.getString(R.string.episode_name_special))
 		} else {
-			if (parentIndexNumber != null)
-				add(context.getString(R.string.lbl_season_number, parentIndexNumber))
+			if (season != null)
+				add(context.getString(R.string.lbl_season_number, season))
 
-			if (indexNumber != null && indexNumberEnd != null)
-				add(context.getString(R.string.lbl_episode_range, indexNumber, indexNumberEnd))
-			else if (indexNumber != null)
-				add(context.getString(R.string.lbl_episode_number, indexNumber))
+			if (episode != null && indexNumberEnd != null)
+				add(context.getString(R.string.lbl_episode_range, episode, indexNumberEnd))
+			else if (episode != null)
+				add(context.getString(R.string.lbl_episode_number, episode))
 
 		}
 	}.filterNot { it.isNullOrBlank() }.joinToString(" ")

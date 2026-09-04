@@ -23,11 +23,15 @@ object EpisodeNaming {
 	private val SEASON_ONLY = Regex("""(?<![A-Za-z0-9])[Ss](?:eason)?[ ._-]?(\d{1,2})(?!\d)""")
 
 	/**
-	 * A title that is really a filename: no spaces, and carrying the underscores, dots or dashes
-	 * that separate the parts of one. Worth hiding once its numbers have been read out, since it
-	 * says nothing a viewer wants.
+	 * A title that is really a filename: no spaces, and carrying the underscores or dots that
+	 * separate the parts of one. Worth hiding once its numbers have been read out, since it says
+	 * nothing a viewer wants.
+	 *
+	 * A dash does not count, deliberately. Plenty of real one-word titles are hyphenated, and
+	 * dropping "Anti-Hero" as though it were a filename is a worse failure than keeping the odd
+	 * dash-separated filename: this decides what a viewer sees in the player, not just in a list.
 	 */
-	private val FILENAME_LIKE = Regex("""^[^\s]*[._-][^\s]*$""")
+	private val FILENAME_LIKE = Regex("""^[^\s]*[._][^\s]*$""")
 
 	fun numbering(item: BaseItemDto): EpisodeNumbering {
 		val name = item.name.orEmpty()
