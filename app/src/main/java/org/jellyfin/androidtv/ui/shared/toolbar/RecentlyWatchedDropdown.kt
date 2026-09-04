@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +33,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -368,12 +369,6 @@ private fun FocusableRow(
 				if (isFocused) Color(0xFF00A4DC) else Color.Transparent,
 				RoundedCornerShape(8.dp),
 			)
-			.selectable(
-				selected = false,
-				interactionSource = interactionSource,
-				indication = null,
-				onClick = onClick,
-			)
 			.then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
 			.focusable(interactionSource = interactionSource)
 			.onKeyEvent { keyEvent ->
@@ -381,8 +376,11 @@ private fun FocusableRow(
 					keyEvent.key == Key.Enter ||
 					keyEvent.key == Key.NumPadEnter
 
+				// Both the press and the release arrive here. Acting on each of them ran the
+				// action twice, which opened a series and shut it again within the one press.
+				// Both are still swallowed, so nothing behind the popup sees the press either.
 				if (isSelect) {
-					onClick()
+					if (keyEvent.type == KeyEventType.KeyUp) onClick()
 					true
 				} else {
 					false
