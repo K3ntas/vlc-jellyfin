@@ -44,10 +44,13 @@ import org.jellyfin.androidtv.data.social.SocialRepository
 import org.jellyfin.androidtv.ui.navigation.NavigationRepository
 import org.jellyfin.androidtv.ui.playback.MediaManager
 import org.jellyfin.androidtv.ui.playback.PlaybackLauncher
+import org.jellyfin.androidtv.util.PlaybackHelper
+import org.jellyfin.androidtv.util.apiclient.Response
 import org.jellyfin.androidtv.ui.settings.compat.SettingsViewModel
 import org.jellyfin.androidtv.util.apiclient.getUrl
 import org.jellyfin.androidtv.util.apiclient.primaryImage
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinActivityViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -140,6 +143,33 @@ private fun MainToolbar(
 	val recentEpisodes by recentlyWatchedViewModel.episodes.collectAsState()
 	val recentExpanded by recentlyWatchedViewModel.expandedSeries.collectAsState()
 	val playbackLauncher = koinInject<PlaybackLauncher>()
+	val playbackHelper = koinInject<PlaybackHelper>()
+
+	/**
+	 * Plays [item] along with whatever follows it.
+	 *
+	 * Resolved through the shared helper rather than handed straight to the launcher: an episode
+	 * played from a bare one-item queue stops dead at the credits, while every other route into
+	 * the player queues the rest of the series behind it. The helper also honours the media
+	 * queuing preference, so a user who turned it off still gets the single episode they asked for.
+	 */
+	fun play(item: BaseItemDto, positionMs: Long) {
+		val context = activity ?: return
+		recentlyWatchedViewModel.hideDropdown()
+
+		@Suppress("DEPRECATION")
+		playbackHelper.getItemsToPlay(context, item, false, false, object : Response<List<BaseItemDto>>() {
+			override fun onResponse(response: List<BaseItemDto>) {
+				playbackLauncher.launch(context, response, positionMs.toInt())
+			}
+
+			// Whatever went wrong resolving the rest of the series, the thing the user picked
+			// should still play
+			override fun onError(exception: Exception) {
+				playbackLauncher.launch(context, listOf(item), positionMs.toInt())
+			}
+		})
+	}
 
 	RecentlyWatchedDropdown(
 		visible = recentVisible,
@@ -155,18 +185,12 @@ private fun MainToolbar(
 			// A series opens; only a film has something to play at this level
 			if (item == null) {
 				recentlyWatchedViewModel.toggleSeries(entry)
-			} else if (activity != null) {
-				recentlyWatchedViewModel.hideDropdown()
-				playbackLauncher.launch(activity, listOf(item), entry.playPositionMs.toInt())
+			} else {
+				play(item, entry.playPositionMs)
 			}
 		},
 		onEntryFocused = recentlyWatchedViewModel::onEntryFocused,
-		onEpisodeClick = { choice ->
-			if (activity != null) {
-				recentlyWatchedViewModel.hideDropdown()
-				playbackLauncher.launch(activity, listOf(choice.item), choice.positionMs.toInt())
-			}
-		},
+		onEpisodeClick = { choice -> play(choice.item, choice.positionMs) },
 		api = api,
 	)
 
