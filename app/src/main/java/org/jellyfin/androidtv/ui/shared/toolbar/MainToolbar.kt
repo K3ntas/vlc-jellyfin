@@ -157,18 +157,20 @@ private fun MainToolbar(
 		val context = activity ?: return
 		recentlyWatchedViewModel.hideDropdown()
 
-		@Suppress("DEPRECATION")
-		playbackHelper.getItemsToPlay(context, item, false, false, object : Response<List<BaseItemDto>>() {
-			override fun onResponse(response: List<BaseItemDto>) {
-				playbackLauncher.launch(context, response, positionMs.toInt())
-			}
+		recentlyWatchedViewModel.resolveFresh(item, positionMs) { freshItem, freshPositionMs ->
+			@Suppress("DEPRECATION")
+			playbackHelper.getItemsToPlay(context, freshItem, false, false, object : Response<List<BaseItemDto>>() {
+				override fun onResponse(response: List<BaseItemDto>) {
+					playbackLauncher.launch(context, response, freshPositionMs.toInt())
+				}
 
-			// Whatever went wrong resolving the rest of the series, the thing the user picked
-			// should still play
-			override fun onError(exception: Exception) {
-				playbackLauncher.launch(context, listOf(item), positionMs.toInt())
-			}
-		})
+				// Whatever went wrong resolving the rest of the series, the thing the user picked
+				// should still play
+				override fun onError(exception: Exception) {
+					playbackLauncher.launch(context, listOf(freshItem), freshPositionMs.toInt())
+				}
+			})
+		}
 	}
 
 	RecentlyWatchedDropdown(

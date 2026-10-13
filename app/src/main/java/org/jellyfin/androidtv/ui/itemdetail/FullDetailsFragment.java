@@ -75,6 +75,7 @@ import org.jellyfin.androidtv.ui.presentation.MutableObjectAdapter;
 import org.jellyfin.androidtv.ui.presentation.MyDetailsOverviewRowPresenter;
 import org.jellyfin.androidtv.util.CoroutineUtils;
 import org.jellyfin.androidtv.util.DateTimeExtensionsKt;
+import org.jellyfin.androidtv.util.ElegantStyle;
 import org.jellyfin.androidtv.util.ImageHelper;
 import org.jellyfin.androidtv.util.KeyProcessor;
 import org.jellyfin.androidtv.util.MarkdownRenderer;
@@ -284,6 +285,25 @@ public class FullDetailsFragment extends Fragment implements RecordingIndicatorV
                             return null;
                         });
                     }
+                } else if (mBaseItem != null && mLastUpdated != null && mLastUpdated.isBefore(Instant.now().minusSeconds(30))) {
+                    // Nothing played here, but the page is old enough that it may have been watched
+                    // on another device meanwhile. Only the resume state is refreshed, and focus is
+                    // left where it is - returning to a page should not move the cursor.
+                    FullDetailsFragmentHelperKt.getItem(FullDetailsFragment.this, mBaseItem.getId(), item -> {
+                        if (item == null || mResumeButton == null) return null;
+
+                        mBaseItem = item;
+                        boolean resumeVisible = (mBaseItem.getType() == BaseItemKind.SERIES && !mBaseItem.getUserData().getPlayed()) || JavaCompat.getCanResume(mBaseItem);
+                        // Finished elsewhere: the resume button goes, so don't leave focus on nothing
+                        if (!resumeVisible && mResumeButton.hasFocus() && playButton != null) playButton.requestFocus();
+                        mResumeButton.setVisibility(resumeVisible ? View.VISIBLE : View.GONE);
+                        if (JavaCompat.getCanResume(mBaseItem)) {
+                            mResumeButton.setLabel(getString(R.string.lbl_resume_from, TimeUtils.formatMillis((mBaseItem.getUserData().getPlaybackPositionTicks() / 10000) - getResumePreroll())));
+                        }
+                        updateWatched();
+                        mLastUpdated = Instant.now();
+                        return null;
+                    });
                 }
             }
         }, 750);
@@ -430,6 +450,11 @@ public class FullDetailsFragment extends Fragment implements RecordingIndicatorV
             mDetailsOverviewRow = new MyDetailsOverviewRow(item);
 
             String primaryImageUrl = imageHelper.getValue().getLogoImageUrl(mBaseItem, 600);
+            if (primaryImageUrl != null && ElegantStyle.isElegantStyle(requireContext())) {
+                // ElegantFin puts the logo where the title is, so the side slot gets the poster
+                mDetailsOverviewRow.setTitleLogo(primaryImageUrl);
+                primaryImageUrl = null;
+            }
             if (primaryImageUrl == null) {
                 primaryImageUrl = imageHelper.getValue().getPrimaryImageUrl(mBaseItem, false, null, posterHeight);
             }

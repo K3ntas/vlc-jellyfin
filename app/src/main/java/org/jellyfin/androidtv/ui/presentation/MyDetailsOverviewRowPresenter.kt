@@ -57,6 +57,12 @@ class MyDetailsOverviewRowPresenter(
 		fun setItem(row: MyDetailsOverviewRow) {
 			setTitle(row.item.name)
 
+			// The text title stays as the fallback for items without a logo
+			val titleLogo = row.titleLogo
+			binding.fdTitleLogo.isVisible = titleLogo != null
+			binding.fdTitle.isVisible = titleLogo == null
+			if (titleLogo != null) binding.fdTitleLogo.load(titleLogo, null, null, 1.0, 0)
+
 			InfoLayoutHelper.addInfoRow(view.context, row.item, row.item.mediaSources?.getOrNull(row.selectedMediaSourceIndex), binding.fdMainInfoRow, false)
 			binding.fdGenreRow.text = row.item.genres?.joinToString(" / ")
 

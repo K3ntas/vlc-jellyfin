@@ -9,6 +9,8 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 class MyDetailsOverviewRow @JvmOverloads constructor(
 	val item: BaseItemDto,
 	var imageDrawable: String? = null,
+	/** Logo shown in place of the text title, when the theme asks for it and the item has one. */
+	var titleLogo: String? = null,
 	var summary: String? = null,
 	var infoItem1: InfoItem? = null,
 	var infoItem2: InfoItem? = null,

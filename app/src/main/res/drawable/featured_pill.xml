@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The featured banner's action pill: ElegantFin's light play button when the banner has focus,
+     a quiet glass outline otherwise. Driven by the banner's focus via duplicateParentState. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="@color/elegantfin_text" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#66384252" />
+            <stroke android:width="1dp" android:color="@color/elegantfin_border" />
+        </shape>
+    </item>
+</selector>

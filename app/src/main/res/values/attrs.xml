@@ -25,6 +25,11 @@
         <attr name="controlIconForegroundActive" format="reference|color" />
         <attr name="controlIconForegroundInactive" format="reference|color" />
         <attr name="defaultBackground" format="reference|color" />
+        <!-- ElegantFin-style presentation: static focus frame, resting card border, logo titles,
+             larger Continue Watching cards and the featured banner. Off in every other theme. -->
+        <attr name="elegantStyle" format="boolean" />
+        <!-- Thin border drawn around every card while it does not have focus. Transparent = none. -->
+        <attr name="cardRestingBorderColor" format="reference|color" />
         <!-- QR drawables -->
         <attr name="qrBackground" format="color" />
         <attr name="qrForeground" format="color" />

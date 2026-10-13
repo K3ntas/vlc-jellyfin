@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import org.jellyfin.androidtv.R
 import org.jellyfin.androidtv.data.service.BackgroundService
+import org.jellyfin.androidtv.util.isElegantStyle
 import org.koin.compose.koinInject
 
 @Composable
@@ -98,6 +100,27 @@ private fun Modifier.backdropDrift(): Modifier {
 	}
 }
 
+/** ElegantFin's --backgroundGradient: #1D2635 at the top settling into #111827 by halfway down. */
+private val ElegantPageGradient = listOf(
+	Color(0xFF1D2635),
+	Color(0xFF111827),
+	Color(0xFF111827),
+)
+
+/** Slate over a backdrop: clear at the top where the art is, nearly solid behind the rows. */
+private val ElegantBackdropWash = listOf(
+	Color(0x33111827),
+	Color(0x99111827),
+	Color(0xF2111827),
+)
+
+/** Slate from the left edge, gone by just past the middle. */
+private val ElegantBackdropSide = listOf(
+	Color(0xD9111827),
+	Color(0x80111827),
+	Color(0x00111827),
+)
+
 @Composable
 fun AppBackground() {
 	val backgroundService = koinInject<BackgroundService>()
@@ -107,6 +130,8 @@ fun AppBackground() {
 	val accentColor by backgroundService.accent.collectAsState()
 
 	val accent = remember(accentColor) { Color(accentColor) }
+	val context = LocalContext.current
+	val elegant = remember(context.theme) { context.isElegantStyle() }
 
 	if (enabled) {
 		AnimatedContent(
@@ -127,28 +152,86 @@ fun AppBackground() {
 						colorFilter = ColorFilter.tint(colorResource(R.color.background_filter), BlendMode.SrcAtop),
 						modifier = Modifier
 							.fillMaxSize()
-							.backdropDrift()
-							.then(if (blurBackground) Modifier.blur(10.dp) else Modifier)
+							// ElegantFin's backdrops hold still. Static also means the blur is
+							// worked out once and kept, rather than redone every frame.
+							.then(if (elegant) Modifier else Modifier.backdropDrift())
+							// Ultrachromic keeps the backdrop sharp and lets the gradients below
+							// carry legibility, which is what makes it read as cinematic
+							.then(if (blurBackground && !elegant) Modifier.blur(10.dp) else Modifier)
 					)
 
-					// Ties the whole screen to the colour of what is playing, without touching the
-					// legibility of anything drawn on top of it
-					Box(
-						modifier = Modifier
-							.fillMaxSize()
-							.background(
-								Brush.verticalGradient(
-									listOf(Color.Transparent, accent.copy(alpha = 0.16f)),
+					if (elegant) {
+						// Ultrachromic's "colourful" mode: the top of the screen takes on the
+						// colour of the artwork, fading into slate where the rows sit
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(
+									Brush.verticalGradient(
+										0f to accent.copy(alpha = 0.30f),
+										0.45f to accent.copy(alpha = 0.08f),
+										1f to Color.Transparent,
+									)
 								)
-							)
-					)
+						)
+
+						// Darkened from the left, where titles and text are, leaving the art to
+						// the right open
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(Brush.horizontalGradient(ElegantBackdropSide))
+						)
+
+						// And from the bottom, behind the rows
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(Brush.verticalGradient(ElegantBackdropWash))
+						)
+					} else {
+						// Ties the whole screen to the colour of what is playing, without touching the
+						// legibility of anything drawn on top of it
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(
+									Brush.verticalGradient(
+										listOf(Color.Transparent, accent.copy(alpha = 0.16f)),
+									)
+								)
+						)
+					}
 				}
 			} else {
 				Box(modifier = Modifier.fillMaxSize()) {
-					AppThemeBackground()
+					if (elegant) {
+						// ElegantFin's page background: dark slate rising into a lighter one
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(Brush.verticalGradient(ElegantPageGradient))
+						)
+
+						// A glow of the last artwork's colour from the top corner, so the bare
+						// page still carries some of what was being looked at
+						Box(
+							modifier = Modifier
+								.fillMaxSize()
+								.background(
+									Brush.radialGradient(
+										colors = listOf(accent.copy(alpha = 0.22f), Color.Transparent),
+										center = Offset.Zero,
+										radius = 1400f,
+									)
+								)
+						)
+					} else {
+						AppThemeBackground()
+					}
 
 					// Nothing to show behind the interface, which is the one place it looked bare
-					if (auroraSupported) {
+					if (!elegant && auroraSupported) {
 						AuroraBackground(accent = accent, modifier = Modifier.fillMaxSize())
 					}
 				}

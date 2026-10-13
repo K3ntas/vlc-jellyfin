@@ -5,17 +5,25 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.graphics.BlurMaskFilter;
+import android.os.Build;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,6 +37,9 @@ import org.jellyfin.androidtv.data.trailer.YouTubeStreamResolver;
 import org.jellyfin.androidtv.ui.itemhandling.BaseRowItem;
 import org.jellyfin.androidtv.util.ContextExtensionsKt;
 import org.jellyfin.androidtv.util.DateTimeExtensionsKt;
+import org.jellyfin.androidtv.util.ElegantStyle;
+import org.jellyfin.androidtv.preference.UserPreferences;
+import org.jellyfin.androidtv.preference.constant.FocusFrameStyle;
 import org.jellyfin.androidtv.util.Utils;
 import org.jellyfin.sdk.api.client.ApiClient;
 import org.jellyfin.sdk.model.api.BaseItemDto;
@@ -52,11 +63,35 @@ public class LegacyImageCardView extends BaseCardView {
     private NumberFormat nf = NumberFormat.getInstance();
     private GradientDrawable mFocusFrame = null;
     private ValueAnimator mFocusFrameAnimator = null;
+    /**
+     * ElegantFin's card treatment: a fixed white frame on focus and a thin dark border at rest, in
+     * place of the colour-drifting frame. Resolved once from the theme, which cannot change
+     * without the activity - and every card in it - being recreated.
+     */
+    private final boolean mElegant = ElegantStyle.isElegantStyle(getContext());
+    private GradientDrawable mRestingFrame = null;
+    private Drawable mElegantFocusFrame = null;
+
+    /**
+     * The focus outline and glow chosen in settings. Read once per card: cards are rebuilt whenever
+     * a screen is, so a changed setting shows on the next screen opened.
+     */
+    private final FocusFrameStyle mFrameStyle = KoinJavaComponent.<UserPreferences>get(UserPreferences.class)
+            .get(UserPreferences.Companion.getFocusFrameStyle());
+    private final boolean mFocusGlow = KoinJavaComponent.<UserPreferences>get(UserPreferences.class)
+            .get(UserPreferences.Companion.getFocusGlowEnabled());
+    /** Whether the frame or glow drawn around the outside of the card is currently showing. */
+    private boolean mOuterFocusShown = false;
+    private final Paint mOuterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF mArtBounds = new RectF();
+    private BlurMaskFilter mGlowFilter = null;
     private BaseItemDto mPreviewItem = null;
     private TrailerPreviewController mTrailerController = null;
     private ValueAnimator mTrailerExpandAnimator = null;
     /** The artwork's own width, remembered so the card can close back to it after a preview. */
     private int mCollapsedImageWidth = 0;
+    /** Fire TV's preview surface, created on first use; see {@link #previewSurface()}. */
+    private SurfaceView mTrailerSurface = null;
 
     /** Trailers are widescreen, so the card takes that shape while one plays. */
     private static final float TRAILER_ASPECT = 16f / 9f;
@@ -107,6 +142,10 @@ public class LegacyImageCardView extends BaseCardView {
     /** Held back from fully saturated so the frame stays easy on the eye against artwork. */
     private static final float FOCUS_FRAME_SATURATION = 0.7f;
 
+    /** The focus glow: how far it spreads and how bright it is at the card's edge. */
+    private static final float GLOW_RADIUS_DP = 16f;
+    private static final int GLOW_ALPHA = 200;
+
     public LegacyImageCardView(Context context, boolean showInfo) {
         super(context, null, androidx.leanback.R.attr.imageCardViewStyle);
 
@@ -115,6 +154,10 @@ public class LegacyImageCardView extends BaseCardView {
         }
 
         binding.mainImage.setClipToOutline(true);
+
+        // The video draws on its own surface, which ignores the artwork's rounded background, so
+        // a playing trailer showed square corners poking out past the rounded focus frame
+        clipToCardCorners(binding.trailerPreview);
 
         // Without a deep camera the settle tilt reads as the card folding rather than leaning
         setCameraDistance(getResources().getDisplayMetrics().density * 8000f);
@@ -130,7 +173,34 @@ public class LegacyImageCardView extends BaseCardView {
 
         setForeground(null);
 
+        if (mElegant && getRestingFrame() != null) {
+            binding.focusFrame.setBackground(getRestingFrame());
+            binding.focusFrame.setAlpha(1f);
+        }
+
         setOnFocusChangeListener((v, hasFocus) -> {
+            // The glow and any outline from settings are drawn around the card in dispatchDraw
+            mOuterFocusShown = hasFocus;
+            if (usesOuterFocus()) invalidate();
+
+            if (mFrameStyle != FocusFrameStyle.THEME_DEFAULT) {
+                // An outline from settings replaces the theme's frame on the artwork, which then
+                // only keeps ElegantFin's resting border
+                binding.focusFrame.animate().cancel();
+                Drawable resting = mElegant && !hasFocus ? getRestingFrame() : null;
+                binding.focusFrame.setBackground(resting);
+                binding.focusFrame.setAlpha(resting != null ? 1f : 0f);
+
+                if (hasFocus) {
+                    startDepthSettle();
+                    startTrailerDwell();
+                } else {
+                    stopDepthSettle();
+                    stopTrailerPreview();
+                }
+                return;
+            }
+
             // Frame the artwork so the focused card is obvious while moving along a row. This is
             // driven from here rather than a state selector because focus lands on the card view
             // while the frame belongs on the image inside it.
@@ -139,7 +209,13 @@ public class LegacyImageCardView extends BaseCardView {
             // row feel like a series of jumps, even though the card itself is animating.
             binding.focusFrame.animate().cancel();
 
-            if (hasFocus) {
+            if (mElegant) {
+                // Always visible, so it is swapped rather than faded: a fade would blink the
+                // resting border out on the way to the focus frame.
+                Drawable frame = hasFocus ? getElegantFocusFrame() : getRestingFrame();
+                binding.focusFrame.setBackground(frame);
+                binding.focusFrame.setAlpha(frame != null ? 1f : 0f);
+            } else if (hasFocus) {
                 binding.focusFrame.setBackground(getFocusFrame());
                 binding.focusFrame.animate().alpha(1f).setDuration(FOCUS_FRAME_FADE_MS).start();
             } else {
@@ -163,6 +239,104 @@ public class LegacyImageCardView extends BaseCardView {
         });
     }
 
+    /** A frame style or glow from settings replaces the theme's own focus frame. */
+    private boolean usesOuterFocus() {
+        return mFrameStyle != FocusFrameStyle.THEME_DEFAULT || mFocusGlow;
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        // The outline and glow sit outside the card, in the gap between it and its neighbours.
+        // The row would otherwise clip them away at the card's own edge.
+        if (usesOuterFocus()) {
+            // Leanback's rows also clip each card to a rounded outline of its own bounds, which
+            // cuts away anything drawn outside it. The artwork keeps its own clip regardless.
+            setClipToOutline(false);
+
+            // Rows wrap each card in a container that clips too, and that container sits in the
+            // row's grid; both have to let the drawing through
+            ViewParent parent = getParent();
+            for (int level = 0; level < 2 && parent instanceof ViewGroup; level++) {
+                ViewGroup group = (ViewGroup) parent;
+                group.setClipChildren(false);
+                group.setClipToPadding(false);
+                group.setClipToOutline(false);
+                parent = group.getParent();
+            }
+        }
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        boolean outer = mOuterFocusShown && usesOuterFocus() && artBounds(mArtBounds);
+        float density = getResources().getDisplayMetrics().density;
+
+        // Glow first, so the artwork covers it and only the halo around the card shows
+        if (outer && mFocusGlow) drawGlow(canvas, density);
+
+        super.dispatchDraw(canvas);
+
+        if (outer && (mFrameStyle == FocusFrameStyle.GOOGLE_TV_RING || mFrameStyle == FocusFrameStyle.HUGGING_RING)) {
+            // Google TV leaves a strip of page background between the artwork and the ring, so the
+            // ring never has to stand out against the poster; the hugging ring sits right on it
+            float stroke = 3f * density;
+            float gap = mFrameStyle == FocusFrameStyle.GOOGLE_TV_RING ? 4f * density : 0f;
+            float offset = gap + stroke / 2f;
+            mOuterPaint.setStyle(Paint.Style.STROKE);
+            mOuterPaint.setStrokeWidth(stroke);
+            mOuterPaint.setColor(Color.WHITE);
+            canvas.drawRect(mArtBounds.left - offset, mArtBounds.top - offset,
+                    mArtBounds.right + offset, mArtBounds.bottom + offset, mOuterPaint);
+        }
+    }
+
+    /**
+     * A soft white halo around the artwork. A real blur from Android 9, where hardware drawing
+     * supports it; before that, widening translucent outlines that approximate one.
+     */
+    private void drawGlow(Canvas canvas, float density) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (mGlowFilter == null) mGlowFilter = new BlurMaskFilter(GLOW_RADIUS_DP * density, BlurMaskFilter.Blur.OUTER);
+            mOuterPaint.setMaskFilter(mGlowFilter);
+            mOuterPaint.setStyle(Paint.Style.FILL);
+            mOuterPaint.setColor(Color.WHITE);
+            mOuterPaint.setAlpha(GLOW_ALPHA);
+            canvas.drawRect(mArtBounds, mOuterPaint);
+            mOuterPaint.setMaskFilter(null);
+            return;
+        }
+
+        mOuterPaint.setStyle(Paint.Style.STROKE);
+        mOuterPaint.setColor(Color.WHITE);
+        float step = 1.5f * density;
+        mOuterPaint.setStrokeWidth(step);
+        int layers = (int) (GLOW_RADIUS_DP / 1.5f);
+        for (int i = 1; i <= layers; i++) {
+            float spread = i * step - step / 2f;
+            mOuterPaint.setAlpha((int) (GLOW_ALPHA * 0.6f * (1f - (float) (i - 1) / layers)));
+            canvas.drawRect(mArtBounds.left - spread, mArtBounds.top - spread,
+                    mArtBounds.right + spread, mArtBounds.bottom + spread, mOuterPaint);
+        }
+    }
+
+    /** The artwork's rectangle in this view's coordinates; false while it has no size yet. */
+    private boolean artBounds(RectF out) {
+        View image = binding.mainImage;
+        if (image.getWidth() == 0 || image.getHeight() == 0) return false;
+
+        float left = image.getLeft();
+        float top = image.getTop();
+        for (View parent = (View) image.getParent(); parent != null && parent != this; parent = (View) parent.getParent()) {
+            left += parent.getLeft();
+            top += parent.getTop();
+        }
+
+        out.set(left, top, left + image.getWidth(), top + image.getHeight());
+        return true;
+    }
+
     /** Lazily loaded and cached, since cards are recycled constantly while scrolling rows. */
     private GradientDrawable getFocusFrame() {
         if (mFocusFrame == null) {
@@ -179,6 +353,59 @@ public class LegacyImageCardView extends BaseCardView {
         }
 
         return mFocusFrame;
+    }
+
+    /**
+     * ElegantFin's focus frame: white on the card's edge with a thin black line just inside it.
+     * Plain white vanished against white posters; the pair stays visible on any artwork - white
+     * shows on dark images, black on light ones. Square and flush with the edge, like the card.
+     */
+    private Drawable getElegantFocusFrame() {
+        if (mElegantFocusFrame == null) {
+            int white = getResources().getDimensionPixelSize(R.dimen.card_focus_frame_width);
+            int dark = Utils.convertDpToPixel(getContext(), 2);
+
+            // Drawn first and wider, so only its inner edge shows past the white line on top
+            GradientDrawable inner = new GradientDrawable();
+            inner.setShape(GradientDrawable.RECTANGLE);
+            inner.setStroke(white + dark, Color.BLACK);
+
+            GradientDrawable outer = new GradientDrawable();
+            outer.setShape(GradientDrawable.RECTANGLE);
+            outer.setStroke(white, Color.WHITE);
+
+            mElegantFocusFrame = new android.graphics.drawable.LayerDrawable(new Drawable[]{inner, outer});
+        }
+
+        return mElegantFocusFrame;
+    }
+
+    /** The thin border every card wears at rest in ElegantFin, or null when the theme has none. */
+    private GradientDrawable getRestingFrame() {
+        int color = ElegantStyle.cardRestingBorderColor(getContext());
+        if (color == 0) return null;
+
+        if (mRestingFrame == null) {
+            int strokeWidth = Utils.convertDpToPixel(getContext(), 2);
+            mRestingFrame = new GradientDrawable();
+            mRestingFrame.setShape(GradientDrawable.RECTANGLE);
+            mRestingFrame.setStroke(strokeWidth, color);
+            mRestingFrame.setCornerRadius(Math.max(0f, resolveCardRounding() - strokeWidth / 2f));
+        }
+
+        return mRestingFrame;
+    }
+
+    /** Clips [view] to the same rounded rectangle as the artwork. */
+    private void clipToCardCorners(View view) {
+        float radius = resolveCardRounding();
+        view.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(View v, android.graphics.Outline outline) {
+                outline.setRoundRect(0, 0, v.getWidth(), v.getHeight(), radius);
+            }
+        });
+        view.setClipToOutline(true);
     }
 
     /** Card rounding is a theme attribute, so it differs between the bundled themes. */
@@ -199,6 +426,13 @@ public class LegacyImageCardView extends BaseCardView {
 
         GradientDrawable frame = getFocusFrame();
         int strokeWidth = getResources().getDimensionPixelSize(R.dimen.card_focus_frame_width);
+
+        // ElegantFin's focus is a plain white outline. Nothing to animate, and no reason to
+        // analyse the artwork for a hue that would not be used.
+        if (mElegant) {
+            frame.setStroke(strokeWidth, Color.WHITE);
+            return;
+        }
 
         resolveAccentHue();
 
@@ -308,13 +542,14 @@ public class LegacyImageCardView extends BaseCardView {
         }
 
         mTrailerController.onFocused(mPreviewItem, url -> {
-            binding.trailerPreview.setVisibility(VISIBLE);
-            binding.trailerPreview.setAlpha(0f);
+            View surface = previewSurface();
+            surface.setVisibility(VISIBLE);
+            surface.setAlpha(0f);
 
-            TrailerPreviewPlayer.INSTANCE.play(getContext(), this, binding.trailerPreview, url, () -> {
+            TrailerPreviewPlayer.INSTANCE.play(getContext(), this, surface, url, () -> {
                 // Only reveal once frames are actually arriving, so the card never flashes black
                 // or opens out for a trailer that turns out not to play
-                binding.trailerPreview.animate().alpha(1f).setDuration(400).start();
+                surface.animate().alpha(1f).setDuration(400).start();
                 expandForTrailer();
                 showTrailerOverlays();
                 return kotlin.Unit.INSTANCE;
@@ -328,10 +563,45 @@ public class LegacyImageCardView extends BaseCardView {
         if (mTrailerController != null) mTrailerController.cancel();
 
         TrailerPreviewPlayer.INSTANCE.stop(this);
-        binding.trailerPreview.setVisibility(GONE);
-        binding.trailerPreview.setAlpha(0f);
+        View surface = mTrailerSurface != null ? mTrailerSurface : binding.trailerPreview;
+        surface.animate().cancel();
+        surface.setVisibility(GONE);
+        surface.setAlpha(0f);
         hideTrailerOverlays();
         collapseAfterTrailer();
+    }
+
+    /**
+     * The view the trailer renders into.
+     *
+     * Everywhere but Fire TV this is the layout's TextureView. A TextureView draws video through
+     * the app's own GPU pass, so every video frame redraws the whole screen - trivial on the
+     * Xiaomi, but more than a Fire TV Stick's GPU can manage, and the preview dropped to around
+     * ten frames a second there. A SurfaceView hands frames straight to the display compositor
+     * instead, so on Fire TV one is created in the TextureView's place the first time it is
+     * needed. The overlays and focus frame are later siblings, so they still draw over it.
+     */
+    private View previewSurface() {
+        if (!isFireTv()) return binding.trailerPreview;
+
+        if (mTrailerSurface == null) {
+            View texture = binding.trailerPreview;
+            ViewGroup parent = (ViewGroup) texture.getParent();
+
+            mTrailerSurface = new SurfaceView(getContext());
+            mTrailerSurface.setVisibility(GONE);
+            // Honoured from Android 12; older Fire OS draws the surface square regardless
+            clipToCardCorners(mTrailerSurface);
+            // A copy, so it pins to the artwork exactly as the TextureView does
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams((RelativeLayout.LayoutParams) texture.getLayoutParams());
+            parent.addView(mTrailerSurface, parent.indexOfChild(texture) + 1, lp);
+        }
+
+        return mTrailerSurface;
+    }
+
+    private boolean isFireTv() {
+        return getContext().getPackageManager().hasSystemFeature("amazon.hardware.fire_tv");
     }
 
     /**

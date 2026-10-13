@@ -11,6 +11,7 @@ import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenti
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationServerUserScreen
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationSortByScreen
 import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationClockScreen
+import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationFocusFrameScreen
 import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationRatingTypeScreen
 import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationScreen
 import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationThemeScreen
@@ -55,6 +56,7 @@ object Routes {
 	const val AUTHENTICATION_AUTO_SIGN_IN = "/authentication/auto-sign-in"
 	const val CUSTOMIZATION = "/customization"
 	const val CUSTOMIZATION_THEME = "/customization/theme"
+	const val CUSTOMIZATION_FOCUS_FRAME = "/customization/focus-frame"
 	const val CUSTOMIZATION_CLOCK = "/customization/clock"
 	const val CUSTOMIZATION_WATCHED_INDICATOR = "/customization/watch-indicators"
 	const val CUSTOMIZATION_RATING_TYPE = "/customization/rating-type"
@@ -122,6 +124,9 @@ val routes = mapOf<String, RouteComposable>(
 	},
 	Routes.CUSTOMIZATION_THEME to {
 		SettingsCustomizationThemeScreen()
+	},
+	Routes.CUSTOMIZATION_FOCUS_FRAME to {
+		SettingsCustomizationFocusFrameScreen()
 	},
 	Routes.CUSTOMIZATION_CLOCK to {
 		SettingsCustomizationClockScreen()

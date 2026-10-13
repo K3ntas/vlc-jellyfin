@@ -65,6 +65,21 @@
             app:layout_constraintStart_toStartOf="@id/guide_main_start"
             tools:text="fdTitle" />
 
+        <!-- ElegantFin: the item's logo standing in for the text title above. Only shown when the
+             theme asks for it and the item has a logo; otherwise the text title is used. -->
+        <org.jellyfin.androidtv.ui.AsyncImageView
+            android:id="@+id/fdTitleLogo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:adjustViewBounds="true"
+            android:maxWidth="440dp"
+            android:maxHeight="90dp"
+            android:scaleType="fitStart"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/fdMainInfoRow"
+            app:layout_constraintStart_toStartOf="@id/guide_main_start" />
+
         <LinearLayout
             android:id="@+id/fdMainInfoRow"
             android:layout_width="0dp"

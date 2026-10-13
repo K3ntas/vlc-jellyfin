@@ -258,9 +258,18 @@ suspend fun FullDetailsFragment.getNextUpEpisode(): BaseItemDto? {
 
 fun FullDetailsFragment.resumePlayback(v: View) {
 	if (mBaseItem.type != BaseItemKind.SERIES) {
-		val pos = (mBaseItem.userData?.playbackPositionTicks?.ticks
-			?: Duration.ZERO) - resumePreroll.milliseconds
-		play(mBaseItem, pos.inWholeMilliseconds.toInt(), false)
+		// The page may have been open since before this was watched further on another device,
+		// so the position is asked for again rather than taken from what the page loaded with.
+		// If the server cannot be reached, the page's own copy still resumes.
+		val shown = mBaseItem
+		getItem(shown.id) { fresh ->
+			val item = fresh ?: shown
+			if (fresh != null) mBaseItem = fresh
+
+			val pos = (item.userData?.playbackPositionTicks?.ticks
+				?: Duration.ZERO) - resumePreroll.milliseconds
+			play(item, pos.inWholeMilliseconds.toInt(), false)
+		}
 		return
 	}
 

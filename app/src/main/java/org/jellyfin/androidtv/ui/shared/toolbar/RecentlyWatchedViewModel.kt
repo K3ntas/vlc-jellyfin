@@ -17,6 +17,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -74,8 +75,6 @@ class RecentlyWatchedViewModel(
 ) : ViewModel() {
 	private companion object {
 		const val TICKS_PER_MS = 10_000L
-		const val CACHE_VALIDITY_MS = 30_000L
-
 		/** Enough to cover whatever anyone is actually part-way through. */
 		const val MAX_ENTRIES = 12
 	}
@@ -98,11 +97,31 @@ class RecentlyWatchedViewModel(
 	private val _episodes = MutableStateFlow<Map<UUID, SeriesEpisodes>>(emptyMap())
 	val episodes: StateFlow<Map<UUID, SeriesEpisodes>> = _episodes.asStateFlow()
 
-	private var lastFetchTime = 0L
-
 	fun showDropdown() {
 		_dropdownVisible.value = true
-		if (System.currentTimeMillis() - lastFetchTime > CACHE_VALIDITY_MS) load()
+		// Always reloaded on open: the list is about where things were left, and that is exactly
+		// what changes when something is watched on another device. The previous entries stay on
+		// screen while the fresh ones load, so opening is no slower.
+		_episodes.value = emptyMap()
+		load()
+	}
+
+	/**
+	 * Hands [onReady] the item as the server has it right now, with its current resume position.
+	 *
+	 * The list can be minutes old by the time something in it is pressed, and progress made on
+	 * another device since then would otherwise be thrown away by resuming from the old spot.
+	 * Falls back to what the list already had if the server cannot be asked.
+	 */
+	fun resolveFresh(item: BaseItemDto, fallbackMs: Long, onReady: (BaseItemDto, Long) -> Unit) {
+		viewModelScope.launch {
+			val fresh = withContext(Dispatchers.IO) {
+				runCatching { api.userLibraryApi.getItem(itemId = item.id).content }.getOrNull()
+			}
+
+			if (fresh == null) onReady(item, fallbackMs)
+			else onReady(fresh, positionMs(fresh))
+		}
 	}
 
 	fun hideDropdown() {
@@ -144,7 +163,6 @@ class RecentlyWatchedViewModel(
 			try {
 				val recent = fetchRecent()
 				_entries.value = groupByShow(recent)
-				lastFetchTime = System.currentTimeMillis()
 				Timber.d("Recently watched: %d entries", _entries.value.size)
 			} catch (error: Exception) {
 				Timber.e(error, "Failed to load recently watched")

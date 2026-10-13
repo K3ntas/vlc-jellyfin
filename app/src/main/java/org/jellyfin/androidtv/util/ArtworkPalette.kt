@@ -3,6 +3,7 @@ package org.jellyfin.androidtv.util
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.os.Build
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.LruCache
@@ -116,16 +117,25 @@ object ArtworkPalette {
 	}
 
 	private fun scale(source: Bitmap): Bitmap {
-		val largest = maxOf(source.width, source.height)
-		if (largest <= SAMPLE_SIZE) return source
+		// The image loader hands out hardware bitmaps, whose pixels live on the GPU. Palette cannot
+		// read those and threw every time, so no accent was ever found. One readback into an
+		// ordinary bitmap fixes that; the result is cached per image, so it happens once.
+		val readable = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && source.config == Bitmap.Config.HARDWARE) {
+			source.copy(Bitmap.Config.ARGB_8888, false) ?: return source
+		} else source
+
+		val largest = maxOf(readable.width, readable.height)
+		if (largest <= SAMPLE_SIZE) return readable
 
 		val factor = SAMPLE_SIZE.toFloat() / largest
-		return Bitmap.createScaledBitmap(
-			source,
-			(source.width * factor).toInt().coerceAtLeast(1),
-			(source.height * factor).toInt().coerceAtLeast(1),
+		val scaled = Bitmap.createScaledBitmap(
+			readable,
+			(readable.width * factor).toInt().coerceAtLeast(1),
+			(readable.height * factor).toInt().coerceAtLeast(1),
 			true,
 		)
+		if (readable !== source && readable !== scaled) readable.recycle()
+		return scaled
 	}
 
 	/** Lifts a swatch into a range that stays visible against dark chrome. */

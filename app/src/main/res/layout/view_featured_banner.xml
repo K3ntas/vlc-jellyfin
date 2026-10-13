@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The featured banner at the top of home under ElegantFin. It draws no image of its own: the
+    app's full-screen backdrop shows the featured item, and this only lays the logo and details
+    over it. That keeps it as cheap as any other row.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/featuredRoot"
+    android:layout_width="match_parent"
+    android:layout_height="330dp"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <LinearLayout
+        android:id="@+id/featuredContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:duplicateParentState="true"
+        android:gravity="bottom|start"
+        android:orientation="vertical"
+        android:paddingStart="56dp"
+        android:paddingEnd="56dp"
+        android:paddingBottom="16dp">
+
+        <org.jellyfin.androidtv.ui.AsyncImageView
+            android:id="@+id/featuredLogo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:adjustViewBounds="true"
+            android:maxWidth="460dp"
+            android:maxHeight="110dp"
+            android:scaleType="fitStart"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/featuredTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:maxWidth="700dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:shadowColor="#CC000000"
+            android:shadowRadius="8"
+            android:textColor="@color/white"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="Featured title" />
+
+        <TextView
+            android:id="@+id/featuredMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:shadowColor="#CC000000"
+            android:shadowRadius="6"
+            android:textColor="@color/elegantfin_text"
+            android:textSize="15sp"
+            tools:text="2024  •  ★ 7.8  •  PG-13  •  2h 1m  •  Action • Drama" />
+
+        <TextView
+            android:id="@+id/featuredOverview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp"
+            android:maxWidth="680dp"
+            android:maxLines="3"
+            android:shadowColor="#CC000000"
+            android:shadowRadius="6"
+            android:textColor="#E5E7EB"
+            android:textSize="16sp"
+            tools:text="Overview" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:duplicateParentState="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/featuredAction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/featured_pill"
+                android:duplicateParentState="true"
+                android:paddingStart="22dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="22dp"
+                android:paddingBottom="8dp"
+                android:text="@string/featured_more_info"
+                android:textColor="@color/featured_pill_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/featuredDots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="22dp"
+                android:letterSpacing="0.3"
+                android:textColor="@color/elegantfin_text"
+                android:textSize="12sp"
+                tools:text="● ○ ○ ○" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

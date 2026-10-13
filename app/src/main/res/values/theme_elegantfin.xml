@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ElegantFin, rebuilt natively.
+
+    Colours are taken from the :root block of lscambo13's ElegantFin CSS theme for Jellyfin Web
+    (v26.09.05): slate gradient points, Tailwind-grey text, the indigo accent, and its border and
+    selector tones converted from HSL. The web theme itself cannot load here - the TV app draws
+    with Android views, not a browser - so only the look is carried over.
+-->
+<resources>
+
+    <color name="elegantfin_dark">#111827</color>
+    <color name="elegantfin_light">#1D2635</color>
+    <color name="elegantfin_header">#E61E2836</color>
+    <color name="elegantfin_text">#D1D5DB</color>
+    <color name="elegantfin_text_dim">#9CA3AF</color>
+    <color name="elegantfin_accent">#5D55E7</color>
+    <color name="elegantfin_border">#47505C</color>
+    <color name="elegantfin_border_dark">#31373F</color>
+    <color name="elegantfin_selector">#384252</color>
+    <color name="elegantfin_selector_alpha">#80384252</color>
+    <color name="elegantfin_progress_track">#CC111827</color>
+
+    <style name="Theme.Jellyfin.ElegantFin" parent="Theme.Jellyfin">
+        <item name="elegantStyle">true</item>
+        <item name="cardRestingBorderColor">@color/elegantfin_border_dark</item>
+
+        <!-- Colors -->
+        <item name="android:colorAccent">@color/elegantfin_accent</item>
+        <item name="defaultBackground">@color/elegantfin_dark</item>
+        <item name="cardImageBackground">@color/elegantfin_light</item>
+        <item name="defaultSearchColor">@color/elegantfin_accent</item>
+        <item name="headerTextColor">@color/elegantfin_text</item>
+
+        <!-- ElegantFin draws resume progress in the text colour, not the accent -->
+        <item name="progressBackground">@color/elegantfin_progress_track</item>
+        <item name="progressPrimary">@color/elegantfin_text</item>
+        <item name="progressSecondary">@color/elegantfin_accent</item>
+
+        <item name="android:colorButtonNormal">@color/elegantfin_selector_alpha</item>
+        <item name="buttonDefaultNormalBackground">@color/elegantfin_selector_alpha</item>
+        <item name="buttonDefaultHighlightBackground">@color/elegantfin_text</item>
+        <item name="inputDefaultStrokeColor">@color/elegantfin_border</item>
+        <item name="inputDefaultHighlightBackground">@color/elegantfin_selector</item>
+        <item name="popupMenuBackground">@color/elegantfin_light</item>
+
+        <!-- Control icons -->
+        <item name="controlIconBackground">@color/elegantfin_selector_alpha</item>
+        <item name="controlIconForegroundActive">@color/elegantfin_accent</item>
+
+        <!-- QR drawables -->
+        <item name="qrForeground">@color/elegantfin_dark</item>
+
+        <!-- Rounding: cards keep square corners, so the focus frame sits exactly on the artwork's
+             edge with nothing poking out past it; controls stay softly rounded -->
+        <item name="cardRounding">0dp</item>
+        <item name="buttonRounding">10dp</item>
+        <item name="inputRounding">8dp</item>
+        <item name="popupMenuRounding">12dp</item>
+
+        <!-- Tile colors -->
+        <item name="tile_port_person_bg">@color/elegantfin_light</item>
+        <item name="tile_port_video_bg">@color/elegantfin_light</item>
+        <item name="tile_land_folder_bg">@color/elegantfin_light</item>
+        <item name="tile_chapter_bg">@color/elegantfin_light</item>
+        <item name="tile_land_tv_bg">@color/elegantfin_light</item>
+        <item name="tile_port_tv_bg">@color/elegantfin_light</item>
+        <item name="tile_actors_bg">@color/elegantfin_light</item>
+        <item name="tile_land_photo_bg">@color/elegantfin_light</item>
+        <item name="tile_port_folder_bg">@color/elegantfin_light</item>
+        <item name="tile_land_series_timer_bg">@color/elegantfin_light</item>
+    </style>
+</resources>

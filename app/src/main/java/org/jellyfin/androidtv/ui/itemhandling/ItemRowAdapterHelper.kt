@@ -105,6 +105,12 @@ private fun ItemRowAdapter.reconcile(
 	replaceAll(
 		items = rows,
 		areItemsTheSame = { old, new -> rowItemId(old) != null && rowItemId(old) == rowItemId(new) },
+		// Row items compare equal by id alone, so the adapter's default would call every surviving
+		// card unchanged and never rebind it - a resume bar kept its old position even after the
+		// fresh data arrived. Comparing the items themselves catches progress and watched changes.
+		areContentsTheSame = { old, new ->
+			(old as? BaseItemDtoBaseRowItem)?.baseItem == (new as? BaseItemDtoBaseRowItem)?.baseItem
+		},
 	)
 
 	itemsLoaded = rows.size

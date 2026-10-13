@@ -5,6 +5,7 @@ import android.view.KeyEvent
 import android.view.View
 import androidx.leanback.app.RowsSupportFragment
 import androidx.leanback.widget.ListRow
+import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
@@ -15,6 +16,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -27,6 +29,8 @@ import kotlinx.coroutines.withTimeout
 import org.jellyfin.androidtv.auth.repository.UserRepository
 import org.jellyfin.androidtv.constant.CustomMessage
 import org.jellyfin.androidtv.constant.HomeSectionType
+import org.jellyfin.androidtv.constant.QueryType
+import org.jellyfin.androidtv.util.isElegantStyle
 import org.jellyfin.androidtv.data.model.DataRefreshService
 import org.jellyfin.androidtv.data.repository.CustomMessageRepository
 import org.jellyfin.androidtv.data.repository.NotificationsRepository
@@ -88,9 +92,28 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 
-		adapter = MutableObjectAdapter<Row>(PositionableListRowPresenter())
+		val elegant = requireContext().isElegantStyle()
+
+		adapter = if (elegant) {
+			// ElegantFin adds the featured banner, a row of its own kind, above the others
+			MutableObjectAdapter<Row>(ClassPresenterSelector().apply {
+				addClassPresenter(ListRow::class.java, PositionableListRowPresenter())
+				addClassPresenter(FeaturedRow::class.java, FeaturedRowPresenter(api, backgroundService, navigationRepository))
+			})
+		} else {
+			MutableObjectAdapter<Row>(PositionableListRowPresenter())
+		}
 
 		lifecycleScope.launch(Dispatchers.IO) {
+			// Asked for alongside everything else rather than after it, so the banner adds no wait.
+			// A server that cannot answer simply gets no banner.
+			val featured = if (elegant) async {
+				runCatching { loadFeaturedItems(api) }
+					.onFailure { Timber.w(it, "Could not load featured items") }
+					.getOrNull()
+					.orEmpty()
+			} else null
+
 			val currentUser = withTimeout(30.seconds) {
 				userRepository.currentUser.filterNotNull().first()
 			}
@@ -125,6 +148,7 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 
 			// Make sure the rows are empty
 			val rows = mutableListOf<HomeFragmentRow>()
+			var continueWatchingRow: HomeFragmentRow? = null
 
 			// Check for coroutine cancellation
 			if (!isActive) return@launch
@@ -134,7 +158,7 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 				HomeSectionType.LATEST_MEDIA -> rows.add(helper.loadRecentlyAdded(userViewsRepository.views.first()))
 				HomeSectionType.LIBRARY_TILES_SMALL -> rows.add(HomeFragmentViewsRow(small = false))
 				HomeSectionType.LIBRARY_BUTTONS -> rows.add(HomeFragmentViewsRow(small = true))
-				HomeSectionType.RESUME -> rows.add(helper.loadResumeVideo())
+				HomeSectionType.RESUME -> rows.add(helper.loadResumeVideo().also { continueWatchingRow = it })
 				HomeSectionType.RESUME_AUDIO -> rows.add(helper.loadResumeAudio())
 				HomeSectionType.RESUME_BOOK -> Unit // Books are not (yet) supported
 				HomeSectionType.ACTIVE_RECORDINGS -> rows.add(helper.loadLatestLiveTvRecordings())
@@ -151,10 +175,22 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 			withContext(Dispatchers.Main) {
 				val cardPresenter = CardPresenter()
 
+				// ElegantFin gives Continue Watching larger cards than the rows around it, so the
+				// thing most likely to be picked next is also the easiest to see
+				val continueWatchingPresenter =
+					if (requireContext().isElegantStyle()) CardPresenter(true, CONTINUE_WATCHING_ELEGANT_HEIGHT)
+					else cardPresenter
+
 				// Add rows in order
+				val featuredItems = featured?.await().orEmpty()
+				if (featuredItems.isNotEmpty()) (adapter as MutableObjectAdapter<Row>).add(FeaturedRow(featuredItems))
+
 				notificationsRow.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
 				nowPlaying.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
-				for (row in rows) row.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
+				for (row in rows) {
+					val presenter = if (row === continueWatchingRow) continueWatchingPresenter else cardPresenter
+					row.addToRowsAdapter(requireContext(), presenter, adapter as MutableObjectAdapter<Row>)
+				}
 			}
 		}
 
@@ -234,7 +270,11 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 
 			repeat(adapter.size()) { i ->
 				val rowAdapter = (adapter[i] as? ListRow)?.adapter as? ItemRowAdapter
-				if (force) rowAdapter?.Retrieve()
+				// Resume and next-up always reload. Their triggers only fire for playback on this
+				// device, so progress made on a phone or the web never reached the row otherwise.
+				// One small request each, and unchanged cards are left alone.
+				val alwaysFresh = rowAdapter?.queryType == QueryType.Resume || rowAdapter?.queryType == QueryType.NextUp
+				if (force || alwaysFresh) rowAdapter?.Retrieve()
 				else rowAdapter?.ReRetrieveIfNeeded()
 			}
 		}
@@ -275,7 +315,20 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 			rowViewHolder: RowPresenter.ViewHolder?,
 			row: Row?,
 		) {
+			if (row is FeaturedRow) {
+				// The banner shows its own item's backdrop. Selection also fires on the first
+				// layout, before the banner's own focus handling has an item to show.
+				currentItem = null
+				(rowViewHolder as? FeaturedRowPresenter.ViewHolder)?.applyBackground()
+				return
+			}
+
 			if (item !is BaseRowItem) {
+				// Rows report an empty selection while they are laid out, focused or not. Only
+				// the selected row may clear the backdrop, or the banner's picture is wiped the
+				// moment the rows below it appear.
+				if (rowViewHolder?.isSelected == false) return
+
 				currentItem = null
 				//fill in default background
 				backgroundService.clearBackgrounds()
@@ -291,3 +344,6 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 		}
 	}
 }
+
+/** Height of Continue Watching cards under ElegantFin; the other rows use 150. */
+private const val CONTINUE_WATCHING_ELEGANT_HEIGHT = 195

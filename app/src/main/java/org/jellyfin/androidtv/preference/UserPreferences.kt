@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.preference.PreferenceManager
 import org.jellyfin.androidtv.preference.UserPreferences.Companion.screensaverInAppEnabled
 import org.jellyfin.androidtv.preference.constant.AppTheme
+import org.jellyfin.androidtv.preference.constant.FocusFrameStyle
 import org.jellyfin.androidtv.preference.constant.AudioBehavior
 import org.jellyfin.androidtv.preference.constant.ClockBehavior
 import org.jellyfin.androidtv.preference.constant.NextUpBehavior
@@ -39,6 +40,16 @@ class UserPreferences(context: Context) : SharedPreferenceStore(
 		 * Select the app theme
 		 */
 		var appTheme = enumPreference("app_theme", AppTheme.DARK)
+
+		/**
+		 * How the focused card is outlined
+		 */
+		var focusFrameStyle = enumPreference("focus_frame_style", FocusFrameStyle.THEME_DEFAULT)
+
+		/**
+		 * Soft white glow around the focused card, alone or alongside the frame
+		 */
+		var focusGlowEnabled = booleanPreference("focus_glow_enabled", false)
 
 		/**
 		 * Enable background images while browsing

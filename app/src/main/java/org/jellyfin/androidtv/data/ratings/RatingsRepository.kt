@@ -467,6 +467,10 @@ class RatingsRepository(
                 append("Version=\"${clientInfo.version}\", ")
                 append("Token=\"$token\"")
             }
+            // Current Jellyfin reads Authorization; X-Emby-Authorization is the legacy name and is
+            // sent as well so this keeps working against older servers. Sending only the legacy
+            // one made every call 401 on Jellyfin 12, which hid the stars as if the plugin were gone.
+            addHeader("Authorization", authHeader)
             addHeader("X-Emby-Authorization", authHeader)
         }
 

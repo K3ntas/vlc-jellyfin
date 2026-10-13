@@ -42,6 +42,27 @@ fun SettingsCustomizationScreen() {
 		}
 
 		item {
+			val focusFrameStyle by rememberPreference(userPreferences, UserPreferences.focusFrameStyle)
+
+			ListButton(
+				headingContent = { Text(stringResource(R.string.pref_focus_frame)) },
+				captionContent = { Text(stringResource(focusFrameStyle.nameRes)) },
+				onClick = { router.push(Routes.CUSTOMIZATION_FOCUS_FRAME) }
+			)
+		}
+
+		item {
+			var focusGlowEnabled by rememberPreference(userPreferences, UserPreferences.focusGlowEnabled)
+
+			ListButton(
+				headingContent = { Text(stringResource(R.string.pref_focus_glow)) },
+				trailingContent = { Checkbox(checked = focusGlowEnabled) },
+				captionContent = { Text(stringResource(R.string.pref_focus_glow_description)) },
+				onClick = { focusGlowEnabled = !focusGlowEnabled }
+			)
+		}
+
+		item {
 			var clockBehavior by rememberPreference(userPreferences, UserPreferences.clockBehavior)
 
 			ListButton(
