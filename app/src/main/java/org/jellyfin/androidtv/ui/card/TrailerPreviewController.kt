@@ -61,7 +61,7 @@ class TrailerPreviewController @JvmOverloads constructor(
 
 			val url = resolve(id, item)
 			if (url == null) {
-				Timber.d("No trailer available for %s", item.name)
+				Timber.i("No trailer available for %s", item.name)
 				return@launch
 			}
 
@@ -103,11 +103,11 @@ class TrailerPreviewController @JvmOverloads constructor(
 		val full = runCatching { api.userLibraryApi.getItem(id).content }.getOrNull() ?: item
 		val remote = full.remoteTrailers.orEmpty().mapNotNull { it.url }
 
-		Timber.d(
-			"Trailer resolve for %s: local=%d remote=%d",
+		Timber.i(
+			"Trailer resolve for %s: local=%d remote=%s",
 			item.name,
 			local?.size ?: 0,
-			remote.size,
+			remote.map { "$it (${youTubeStreamResolver.canResolve(it)})" },
 		)
 
 		// A youtube watch url is a web page, not a stream, so it has to be extracted before any

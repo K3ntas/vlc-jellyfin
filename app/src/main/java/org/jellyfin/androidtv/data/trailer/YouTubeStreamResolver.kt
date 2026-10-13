@@ -59,7 +59,7 @@ class YouTubeStreamResolver(
 	/** True for urls this resolver stands a chance with, so callers can skip the work otherwise. */
 	fun canResolve(url: String): Boolean = runCatching {
 		ServiceList.YouTube.streamLHFactory.onAcceptUrl(url)
-	}.getOrDefault(false)
+	}.onFailure { Timber.w(it, "Could not check trailer url %s", url) }.getOrDefault(false)
 
 	/**
 	 * Returns a directly playable stream url for [watchUrl], or null when extraction fails.
@@ -74,16 +74,17 @@ class YouTubeStreamResolver(
 		ensureInitialised()
 
 		val info = runCatching { StreamInfo.getInfo(ServiceList.YouTube, watchUrl) }
-			.onFailure { Timber.d(it, "Could not extract trailer stream from %s", watchUrl) }
+			// Warn rather than debug: Fire OS drops debug logs entirely, which hid this on the Firestick
+			.onFailure { Timber.w(it, "Could not extract trailer stream from %s", watchUrl) }
 			.getOrNull() ?: return@withContext null
 
 		val stream = pickStream(info)
 		if (stream == null) {
-			Timber.d("No usable stream for %s", watchUrl)
+			Timber.w("No usable stream for %s", watchUrl)
 			return@withContext null
 		}
 
-		Timber.d("Resolved trailer %s to %s (%s)", watchUrl, stream.resolution, stream.format?.name)
+		Timber.i("Resolved trailer %s to %s (%s)", watchUrl, stream.resolution, stream.format?.name)
 
 		stream.content?.also { url ->
 			synchronized(cache) {

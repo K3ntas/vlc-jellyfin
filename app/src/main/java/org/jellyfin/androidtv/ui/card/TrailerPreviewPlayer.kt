@@ -3,6 +3,7 @@ package org.jellyfin.androidtv.ui.card
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Matrix
+import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import androidx.media3.common.MediaItem
@@ -29,7 +30,8 @@ object TrailerPreviewPlayer {
 	/** The card currently showing a preview, so a late callback cannot steal the surface. */
 	private var owner: Any? = null
 
-	private var surface: TextureView? = null
+	/** Either a [TextureView] or a [SurfaceView]; only the former needs the crop transform. */
+	private var surface: View? = null
 	private var onStarted: (() -> Unit)? = null
 
 	/** Kept so the crop can be recomputed when the card resizes around the video. */
@@ -66,7 +68,7 @@ object TrailerPreviewPlayer {
 		override fun onPlayerError(error: PlaybackException) {
 			// Extracted urls are signed and can expire or be refused mid-playback. Dropping the
 			// preview is the right outcome; the artwork is still underneath.
-			Timber.d(error, "Trailer preview failed")
+			Timber.w(error, "Trailer preview failed")
 			owner?.let(::stop)
 		}
 	}
@@ -77,7 +79,7 @@ object TrailerPreviewPlayer {
 	 * [token] identifies the requesting card: the dwell timer resolves asynchronously, so a
 	 * request that lands after focus has already moved on must be ignored rather than played.
 	 */
-	fun play(context: Context, token: Any, surface: TextureView, url: String, onStarted: () -> Unit) {
+	fun play(context: Context, token: Any, surface: View, url: String, onStarted: () -> Unit) {
 		owner = token
 		this.surface?.removeOnLayoutChangeListener(layoutListener)
 		this.surface = surface.also { it.addOnLayoutChangeListener(layoutListener) }
@@ -96,7 +98,10 @@ object TrailerPreviewPlayer {
 		instance.volume = 0f
 
 		runCatching {
-			instance.setVideoTextureView(surface)
+			when (surface) {
+				is SurfaceView -> instance.setVideoSurfaceView(surface)
+				is TextureView -> instance.setVideoTextureView(surface)
+			}
 			instance.setMediaItem(MediaItem.fromUri(url))
 			instance.prepare()
 			instance.play()
@@ -178,7 +183,8 @@ object TrailerPreviewPlayer {
 	 * matters far more at this size than seeing the full frame.
 	 */
 	private fun applyCenterCrop(videoSize: VideoSize) {
-		val view = surface ?: return
+		// A SurfaceView has no transform; it is only used where the card is already widescreen
+		val view = surface as? TextureView ?: return
 
 		val viewWidth = view.width.toFloat()
 		val viewHeight = view.height.toFloat()

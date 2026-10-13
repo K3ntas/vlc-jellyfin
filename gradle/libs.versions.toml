@@ -130,7 +130,9 @@ slf4j-timber = { module = "io.github.unveloper:slf4j-timber", version.ref = "slf
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 
 # Compatibility (desugaring)
-android-desugar = { module = "com.android.tools:desugar_jdk_libs", version.ref = "android-desugar" }
+# The nio flavour backports URLDecoder.decode(String, Charset), which NewPipeExtractor calls for every
+# trailer url - without it the lookup throws NoSuchMethodError below Android 13 (the Firestick is 11)
+android-desugar = { module = "com.android.tools:desugar_jdk_libs_nio", version.ref = "android-desugar" }
 
 # Test utilities
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
